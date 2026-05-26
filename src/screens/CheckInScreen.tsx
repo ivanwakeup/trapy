@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   },
   container: {
     paddingHorizontal: 24,
-    paddingTop: 64,
+    paddingTop: 24,
     paddingBottom: 48,
   },
   title: {
