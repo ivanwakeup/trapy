@@ -10,6 +10,8 @@ import {
 import { StatusBar } from "expo-status-bar";
 import CheckInScreen from "./src/screens/CheckInScreen";
 import AnalyticsScreen from "./src/screens/AnalyticsScreen";
+import ReflectionScreen from "./src/screens/ReflectionScreen";
+import { CheckInEntry } from "./src/types";
 
 type Screen = "Check In" | "Analytics";
 const SCREENS: Screen[] = ["Check In", "Analytics"];
@@ -17,6 +19,7 @@ const DRAWER_WIDTH = 240;
 
 export default function App() {
   const [activeScreen, setActiveScreen] = useState<Screen>("Check In");
+  const [pendingReflection, setPendingReflection] = useState<CheckInEntry | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
 
@@ -46,22 +49,35 @@ export default function App() {
     <SafeAreaView style={styles.root}>
       <StatusBar style="dark" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={openDrawer} style={styles.hamburger} hitSlop={12}>
-          <View style={styles.bar} />
-          <View style={styles.bar} />
-          <View style={styles.bar} />
-        </Pressable>
-        <Text style={styles.headerTitle}>{activeScreen}</Text>
-        <View style={styles.hamburger} />
-      </View>
+      {/* Header — hidden during reflection */}
+      {!pendingReflection && (
+        <View style={styles.header}>
+          <Pressable onPress={openDrawer} style={styles.hamburger} hitSlop={12}>
+            <View style={styles.bar} />
+            <View style={styles.bar} />
+            <View style={styles.bar} />
+          </Pressable>
+          <Text style={styles.headerTitle}>{activeScreen}</Text>
+          <View style={styles.hamburger} />
+        </View>
+      )}
 
       {/* Screen content */}
       <View style={styles.content}>
-        {activeScreen === "Check In" && <CheckInScreen />}
-        {activeScreen === "Analytics" && (
-          <AnalyticsScreen focused={activeScreen === "Analytics"} />
+        {pendingReflection ? (
+          <ReflectionScreen
+            entry={pendingReflection}
+            onDone={() => setPendingReflection(null)}
+          />
+        ) : (
+          <>
+            {activeScreen === "Check In" && (
+              <CheckInScreen onSaved={(entry) => setPendingReflection(entry)} />
+            )}
+            {activeScreen === "Analytics" && (
+              <AnalyticsScreen focused={activeScreen === "Analytics"} />
+            )}
+          </>
         )}
       </View>
 

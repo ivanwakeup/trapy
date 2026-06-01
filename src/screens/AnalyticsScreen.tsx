@@ -7,15 +7,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-interface CheckInEntry {
-  id: string;
-  timestamp: string;
-  activationLevel: number;
-  triggers: string[];
-  thoughts: string[];
-  urges: string[];
-}
+import { CheckInEntry } from "../types";
 
 function topN(items: string[], n = 5): { label: string; count: number }[] {
   const counts: Record<string, number> = {};

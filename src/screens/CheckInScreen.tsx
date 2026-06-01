@@ -11,22 +11,17 @@ import Slider from "@react-native-community/slider";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import TagSelector from "../components/TagSelector";
 import { TRIGGERS, THOUGHTS, URGES, ACTIVATION_LABELS } from "../data/tags";
+import { CheckInEntry } from "../types";
 
-interface CheckInEntry {
-  id: string;
-  timestamp: string;
-  activationLevel: number;
-  triggers: string[];
-  thoughts: string[];
-  urges: string[];
+interface Props {
+  onSaved: (entry: CheckInEntry) => void;
 }
 
-export default function CheckInScreen() {
+export default function CheckInScreen({ onSaved }: Props) {
   const [activation, setActivation] = useState(5);
   const [triggers, setTriggers] = useState<string[]>([]);
   const [thoughts, setThoughts] = useState<string[]>([]);
   const [urges, setUrges] = useState<string[]>([]);
-  const [saved, setSaved] = useState(false);
 
   function toggleTag(
     list: string[],
@@ -36,6 +31,13 @@ export default function CheckInScreen() {
     setList(
       list.includes(tag) ? list.filter((t) => t !== tag) : [...list, tag]
     );
+  }
+
+  function reset() {
+    setActivation(5);
+    setTriggers([]);
+    setThoughts([]);
+    setUrges([]);
   }
 
   async function handleSave() {
@@ -53,33 +55,11 @@ export default function CheckInScreen() {
       const entries: CheckInEntry[] = existing ? JSON.parse(existing) : [];
       entries.unshift(entry);
       await AsyncStorage.setItem("checkins", JSON.stringify(entries));
-      setSaved(true);
+      reset();
+      onSaved(entry);
     } catch {
       Alert.alert("Error", "Could not save your check-in. Please try again.");
     }
-  }
-
-  function handleReset() {
-    setActivation(5);
-    setTriggers([]);
-    setThoughts([]);
-    setUrges([]);
-    setSaved(false);
-  }
-
-  if (saved) {
-    return (
-      <View style={styles.confirmedContainer}>
-        <Text style={styles.confirmedEmoji}>✓</Text>
-        <Text style={styles.confirmedTitle}>Check-in saved</Text>
-        <Text style={styles.confirmedSubtitle}>
-          You noticed what was happening. That's the work.
-        </Text>
-        <Pressable style={styles.resetButton} onPress={handleReset}>
-          <Text style={styles.resetButtonText}>New check-in</Text>
-        </Pressable>
-      </View>
-    );
   }
 
   return (
@@ -97,7 +77,6 @@ export default function CheckInScreen() {
         })}
       </Text>
 
-      {/* Activation level */}
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>How activated are you right now?</Text>
         <View style={styles.activationRow}>
@@ -123,7 +102,6 @@ export default function CheckInScreen() {
         </View>
       </View>
 
-      {/* Triggers */}
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>What triggered it?</Text>
         <Text style={styles.sectionHint}>Select all that apply</Text>
@@ -134,7 +112,6 @@ export default function CheckInScreen() {
         />
       </View>
 
-      {/* Thoughts */}
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>What's the story your brain is running?</Text>
         <Text style={styles.sectionHint}>Select all that apply</Text>
@@ -145,7 +122,6 @@ export default function CheckInScreen() {
         />
       </View>
 
-      {/* Urges */}
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>What's your urge right now?</Text>
         <Text style={styles.sectionHint}>Select all that apply</Text>
@@ -239,43 +215,6 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "600",
-  },
-  confirmedContainer: {
-    flex: 1,
-    backgroundColor: "#FAF9F7",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 32,
-  },
-  confirmedEmoji: {
-    fontSize: 48,
-    color: "#7C3AED",
-    marginBottom: 16,
-  },
-  confirmedTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 10,
-  },
-  confirmedSubtitle: {
-    fontSize: 16,
-    color: "#6B7280",
-    textAlign: "center",
-    lineHeight: 24,
-    marginBottom: 40,
-  },
-  resetButton: {
-    borderWidth: 1.5,
-    borderColor: "#7C3AED",
-    paddingVertical: 12,
-    paddingHorizontal: 28,
-    borderRadius: 12,
-  },
-  resetButtonText: {
-    color: "#7C3AED",
-    fontSize: 15,
     fontWeight: "600",
   },
 });
