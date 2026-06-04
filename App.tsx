@@ -6,20 +6,60 @@ import {
   Animated,
   StyleSheet,
   SafeAreaView,
+  ActivityIndicator,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import CheckInScreen from "./src/screens/CheckInScreen";
+import { useFonts } from "expo-font";
+import { DMSerifDisplay_400Regular } from "@expo-google-fonts/dm-serif-display";
+import {
+  DMSans_300Light,
+  DMSans_400Regular,
+  DMSans_500Medium,
+  DMSans_600SemiBold,
+} from "@expo-google-fonts/dm-sans";
+import { AuthProvider, useAuth } from "./src/lib/AuthContext";
+import AuthScreen from "./src/screens/AuthScreen";
+import HomeScreen from "./src/screens/HomeScreen";
+import ChoiceScreen from "./src/screens/ChoiceScreen";
+import ReflectScreen from "./src/screens/ReflectScreen";
+import ReframeScreen from "./src/screens/ReframeScreen";
+import CalmDownScreen from "./src/screens/CalmDownScreen";
 import AnalyticsScreen from "./src/screens/AnalyticsScreen";
-import ReflectionScreen from "./src/screens/ReflectionScreen";
 import { CheckInEntry } from "./src/types";
+import { Colors, Fonts } from "./src/theme";
 
-type Screen = "Check In" | "Analytics";
-const SCREENS: Screen[] = ["Check In", "Analytics"];
+type AppScreen =
+  | { screen: "home" }
+  | { screen: "analytics" }
+  | { screen: "choice"; activationLevel: number }
+  | { screen: "reflect"; activationLevel: number; showReframeAfter: boolean }
+  | { screen: "reframe"; entry: CheckInEntry }
+  | { screen: "calmdown" };
+
 const DRAWER_WIDTH = 240;
 
-export default function App() {
-  const [activeScreen, setActiveScreen] = useState<Screen>("Check In");
-  const [pendingReflection, setPendingReflection] = useState<CheckInEntry | null>(null);
+function headerTitle(current: AppScreen): string {
+  switch (current.screen) {
+    case "home": return "trapy";
+    case "analytics": return "Analytics";
+    case "reflect": return "Reflect";
+    default: return "";
+  }
+}
+
+function showHeader(current: AppScreen): boolean {
+  return current.screen === "home" || current.screen === "analytics" || current.screen === "reflect";
+}
+
+function routeFromActivation(level: number): AppScreen {
+  if (level <= 4) return { screen: "reflect", activationLevel: level, showReframeAfter: false };
+  if (level <= 7) return { screen: "choice", activationLevel: level };
+  return { screen: "calmdown" };
+}
+
+function MainApp() {
+  const { signOut } = useAuth();
+  const [current, setCurrent] = useState<AppScreen>({ screen: "home" });
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
 
@@ -40,116 +80,200 @@ export default function App() {
     }).start(() => setDrawerOpen(false));
   }
 
-  function navigate(screen: Screen) {
-    setActiveScreen(screen);
+  function navigateTo(screen: AppScreen) {
+    setCurrent(screen);
     closeDrawer();
   }
 
+  function renderScreen() {
+    switch (current.screen) {
+      case "home":
+        return (
+          <HomeScreen
+            onContinue={(level) => setCurrent(routeFromActivation(level))}
+          />
+        );
+      case "choice":
+        return (
+          <ChoiceScreen
+            activationLevel={current.activationLevel}
+            onReflect={() =>
+              setCurrent({
+                screen: "reflect",
+                activationLevel: current.activationLevel,
+                showReframeAfter: true,
+              })
+            }
+            onCalmDown={() => setCurrent({ screen: "calmdown" })}
+          />
+        );
+      case "reflect":
+        return (
+          <ReflectScreen
+            activationLevel={current.activationLevel}
+            showReframeAfter={current.showReframeAfter}
+            onSaved={(entry) => {
+              if (current.showReframeAfter) {
+                setCurrent({ screen: "reframe", entry });
+              } else {
+                setCurrent({ screen: "home" });
+              }
+            }}
+          />
+        );
+      case "reframe":
+        return (
+          <ReframeScreen
+            entry={current.entry}
+            onDone={() => setCurrent({ screen: "home" })}
+          />
+        );
+      case "calmdown":
+        return <CalmDownScreen onDone={() => setCurrent({ screen: "home" })} />;
+      case "analytics":
+        return <AnalyticsScreen focused />;
+    }
+  }
+
+  const drawerItems: { label: string; target: AppScreen }[] = [
+    { label: "Home", target: { screen: "home" } },
+    { label: "Analytics", target: { screen: "analytics" } },
+  ];
+
+  const activeDrawerItem =
+    current.screen === "analytics" ? "Analytics" : "Home";
+
   return (
     <SafeAreaView style={styles.root}>
-      <StatusBar style="dark" />
-
-      {/* Header — hidden during reflection */}
-      {!pendingReflection && (
+      {showHeader(current) && (
         <View style={styles.header}>
           <Pressable onPress={openDrawer} style={styles.hamburger} hitSlop={12}>
             <View style={styles.bar} />
             <View style={styles.bar} />
             <View style={styles.bar} />
           </Pressable>
-          <Text style={styles.headerTitle}>{activeScreen}</Text>
+          <Text style={styles.headerTitle}>{headerTitle(current)}</Text>
           <View style={styles.hamburger} />
         </View>
       )}
 
-      {/* Screen content */}
-      <View style={styles.content}>
-        {pendingReflection ? (
-          <ReflectionScreen
-            entry={pendingReflection}
-            onDone={() => setPendingReflection(null)}
-          />
-        ) : (
-          <>
-            {activeScreen === "Check In" && (
-              <CheckInScreen onSaved={(entry) => setPendingReflection(entry)} />
-            )}
-            {activeScreen === "Analytics" && (
-              <AnalyticsScreen focused={activeScreen === "Analytics"} />
-            )}
-          </>
-        )}
-      </View>
+      <View style={styles.content}>{renderScreen()}</View>
 
-      {/* Drawer overlay */}
       {drawerOpen && (
         <Pressable style={styles.overlay} onPress={closeDrawer} />
       )}
 
-      {/* Drawer */}
       <Animated.View
         style={[styles.drawer, { transform: [{ translateX: drawerAnim }] }]}
       >
         <Text style={styles.drawerTitle}>trapy</Text>
-        {SCREENS.map((screen) => (
+        {drawerItems.map(({ label, target }) => (
           <Pressable
-            key={screen}
-            onPress={() => navigate(screen)}
+            key={label}
+            onPress={() => navigateTo(target)}
             style={[
               styles.drawerItem,
-              activeScreen === screen && styles.drawerItemActive,
+              activeDrawerItem === label && styles.drawerItemActive,
             ]}
           >
             <Text
               style={[
                 styles.drawerItemText,
-                activeScreen === screen && styles.drawerItemTextActive,
+                activeDrawerItem === label && styles.drawerItemTextActive,
               ]}
             >
-              {screen}
+              {label}
             </Text>
           </Pressable>
         ))}
+        <View style={styles.drawerFooter}>
+          <Pressable onPress={signOut}>
+            <Text style={styles.signOutText}>Sign out</Text>
+          </Pressable>
+        </View>
       </Animated.View>
     </SafeAreaView>
   );
 }
 
+function AppGate() {
+  const { authState } = useAuth();
+
+  const [fontsLoaded] = useFonts({
+    DMSerifDisplay_400Regular,
+    DMSans_300Light,
+    DMSans_400Regular,
+    DMSans_500Medium,
+    DMSans_600SemiBold,
+  });
+
+  if (!fontsLoaded || authState === "loading") {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator color={Colors.primary} />
+      </View>
+    );
+  }
+
+  if (authState === "unauthenticated") {
+    return <AuthScreen />;
+  }
+
+  return <MainApp />;
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <StatusBar style="dark" />
+      <AppGate />
+    </AuthProvider>
+  );
+}
+
 const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   root: {
     flex: 1,
-    backgroundColor: "#FAF9F7",
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    backgroundColor: Colors.background,
     borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
+    borderBottomColor: Colors.divider,
   },
   hamburger: {
-    width: 32,
+    width: 28,
     gap: 5,
     paddingVertical: 4,
   },
   bar: {
-    height: 2,
-    backgroundColor: "#1F2937",
+    height: 1.5,
+    backgroundColor: Colors.textPrimary,
     borderRadius: 2,
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
+    fontSize: 15,
+    fontFamily: Fonts.sansMedium,
+    color: Colors.textPrimary,
+    letterSpacing: 0.3,
   },
   content: {
     flex: 1,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.3)",
+    backgroundColor: "rgba(28, 51, 48, 0.2)",
     zIndex: 10,
   },
   drawer: {
@@ -158,39 +282,49 @@ const styles = StyleSheet.create({
     left: 0,
     bottom: 0,
     width: DRAWER_WIDTH,
-    backgroundColor: "#FAF9F7",
-    paddingTop: 60,
-    paddingHorizontal: 20,
+    backgroundColor: Colors.surface,
+    paddingTop: 64,
+    paddingHorizontal: 24,
     zIndex: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 2, height: 0 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowColor: Colors.textPrimary,
+    shadowOffset: { width: 4, height: 0 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
     elevation: 10,
   },
   drawerTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#7C3AED",
-    marginBottom: 32,
-    letterSpacing: -0.5,
+    fontSize: 26,
+    fontFamily: Fonts.serif,
+    color: Colors.primary,
+    marginBottom: 36,
+    letterSpacing: 0.5,
   },
   drawerItem: {
     paddingVertical: 14,
     paddingHorizontal: 12,
-    borderRadius: 10,
-    marginBottom: 4,
+    borderRadius: 12,
+    marginBottom: 2,
   },
   drawerItemActive: {
-    backgroundColor: "#F3F0FF",
+    backgroundColor: Colors.primaryLight,
   },
   drawerItemText: {
     fontSize: 16,
-    fontWeight: "500",
-    color: "#6B7280",
+    fontFamily: Fonts.sans,
+    color: Colors.textSecondary,
   },
   drawerItemTextActive: {
-    color: "#7C3AED",
-    fontWeight: "600",
+    fontFamily: Fonts.sansMedium,
+    color: Colors.primaryDark,
+  },
+  drawerFooter: {
+    position: "absolute",
+    bottom: 40,
+    left: 24,
+  },
+  signOutText: {
+    fontSize: 15,
+    fontFamily: Fonts.sans,
+    color: Colors.textMuted,
   },
 });

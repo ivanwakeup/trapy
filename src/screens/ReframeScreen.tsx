@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CheckInEntry } from "../types";
 import { selectReframe } from "../data/reframes";
+import { Colors, Fonts } from "../theme";
 
 type Step = "openness" | "reframe" | "grounding";
 
@@ -11,7 +12,7 @@ interface Props {
   onDone: () => void;
 }
 
-export default function ReflectionScreen({ entry, onDone }: Props) {
+export default function ReframeScreen({ entry, onDone }: Props) {
   const [step, setStep] = useState<Step>("openness");
   const reframe = selectReframe(entry);
 
@@ -35,7 +36,7 @@ export default function ReflectionScreen({ entry, onDone }: Props) {
         await AsyncStorage.setItem("checkins", JSON.stringify(entries));
       }
     } catch {
-      // non-critical — reflection just won't be saved
+      // non-critical
     }
   }
 
@@ -44,50 +45,44 @@ export default function ReflectionScreen({ entry, onDone }: Props) {
       <Text style={styles.savedBadge}>Saved ✓</Text>
 
       {step === "openness" && (
-        <>
+        <View style={styles.inner}>
           <Text style={styles.context}>
             You're at a{" "}
-            <Text style={styles.activationNumber}>{entry.activationLevel}</Text>{" "}
-            right now.
+            <Text style={styles.activationNumber}>{entry.activationLevel}</Text>
+            {" "}right now.
           </Text>
           <Text style={styles.question}>
             Would it feel ok to consider another possibility?
           </Text>
           <View style={styles.buttonRow}>
-            <Pressable
-              style={[styles.choiceButton, styles.choiceButtonBorder]}
-              onPress={handleOpenToReframe}
-            >
+            <Pressable style={styles.choiceButton} onPress={handleOpenToReframe}>
               <Text style={styles.choiceButtonText}>Yes, I'm open</Text>
             </Pressable>
-            <Pressable
-              style={[styles.choiceButton, styles.choiceButtonBorder]}
-              onPress={handleNotNow}
-            >
+            <Pressable style={styles.choiceButton} onPress={handleNotNow}>
               <Text style={styles.choiceButtonText}>Not right now</Text>
             </Pressable>
           </View>
-        </>
+        </View>
       )}
 
       {step === "reframe" && (
-        <>
+        <View style={styles.inner}>
           <Text style={styles.reframeText}>{reframe}</Text>
           <Pressable style={styles.doneButton} onPress={onDone}>
             <Text style={styles.doneButtonText}>Done</Text>
           </Pressable>
-        </>
+        </View>
       )}
 
       {step === "grounding" && (
-        <>
+        <View style={styles.inner}>
           <Text style={styles.reframeText}>
             That's ok. You don't have to figure it out right now.
           </Text>
           <Pressable style={styles.doneButton} onPress={onDone}>
             <Text style={styles.doneButtonText}>Done</Text>
           </Pressable>
-        </>
+        </View>
       )}
     </View>
   );
@@ -96,36 +91,40 @@ export default function ReflectionScreen({ entry, onDone }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FAF9F7",
-    paddingHorizontal: 32,
-    justifyContent: "center",
+    backgroundColor: Colors.background,
+    paddingHorizontal: 36,
   },
   savedBadge: {
     position: "absolute",
-    top: 24,
+    top: 20,
     alignSelf: "center",
-    fontSize: 13,
-    color: "#9CA3AF",
-    fontWeight: "500",
+    fontSize: 12,
+    fontFamily: Fonts.sans,
+    color: Colors.textMuted,
+    letterSpacing: 0.5,
+  },
+  inner: {
+    flex: 1,
+    justifyContent: "center",
   },
   context: {
-    fontSize: 17,
-    color: "#6B7280",
-    marginBottom: 24,
+    fontSize: 16,
+    fontFamily: Fonts.sansLight,
+    color: Colors.textSecondary,
     textAlign: "center",
+    marginBottom: 28,
   },
   activationNumber: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#7C3AED",
+    fontFamily: Fonts.sansSemiBold,
+    color: Colors.primary,
   },
   question: {
-    fontSize: 22,
-    fontWeight: "600",
-    color: "#111827",
+    fontSize: 28,
+    fontFamily: Fonts.serif,
+    color: Colors.textPrimary,
     textAlign: "center",
-    lineHeight: 32,
-    marginBottom: 40,
+    lineHeight: 40,
+    marginBottom: 52,
   },
   buttonRow: {
     flexDirection: "row",
@@ -133,36 +132,37 @@ const styles = StyleSheet.create({
   },
   choiceButton: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  choiceButtonBorder: {
-    borderWidth: 1.5,
-    borderColor: "#D1C4E9",
-  },
-  choiceButtonText: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#374151",
-  },
-  reframeText: {
-    fontSize: 20,
-    fontWeight: "500",
-    color: "#1F2937",
-    textAlign: "center",
-    lineHeight: 32,
-    marginBottom: 48,
-  },
-  doneButton: {
-    backgroundColor: "#7C3AED",
     paddingVertical: 16,
     borderRadius: 14,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  choiceButtonText: {
+    fontSize: 15,
+    fontFamily: Fonts.sansMedium,
+    color: Colors.textPrimary,
+    textAlign: "center",
+  },
+  reframeText: {
+    fontSize: 24,
+    fontFamily: Fonts.serif,
+    color: Colors.textPrimary,
+    textAlign: "center",
+    lineHeight: 38,
+    marginBottom: 56,
+  },
+  doneButton: {
+    backgroundColor: Colors.primary,
+    paddingVertical: 17,
+    borderRadius: 16,
+    alignItems: "center",
   },
   doneButtonText: {
-    color: "#FFFFFF",
+    color: Colors.surface,
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: Fonts.sansSemiBold,
+    letterSpacing: 0.3,
   },
 });

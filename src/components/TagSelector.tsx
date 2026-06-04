@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
+import { Colors, Fonts } from "../theme";
 
 interface Props {
   tags: string[];
@@ -36,22 +37,23 @@ const styles = StyleSheet.create({
   },
   tag: {
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: "#D1C4E9",
-    backgroundColor: "#FAFAFA",
+    paddingVertical: 9,
+    borderRadius: 24,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   tagSelected: {
-    backgroundColor: "#7C3AED",
-    borderColor: "#7C3AED",
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   tagText: {
     fontSize: 14,
-    color: "#6B7280",
-    fontWeight: "500",
+    fontFamily: Fonts.sans,
+    color: Colors.textSecondary,
   },
   tagTextSelected: {
-    color: "#FFFFFF",
+    fontFamily: Fonts.sansMedium,
+    color: Colors.surface,
   },
 });

@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CheckInEntry } from "../types";
+import { Colors, Fonts, Shadow } from "../theme";
 
 function topN(items: string[], n = 5): { label: string; count: number }[] {
   const counts: Record<string, number> = {};
@@ -31,17 +32,15 @@ function RankedList({
   const max = items[0].count;
 
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionLabel}>{title}</Text>
+    <View style={styles.card}>
+      <Text style={styles.cardLabel}>{title}</Text>
       {items.map(({ label, count }) => (
         <View key={label} style={styles.rankRow}>
           <Text style={styles.rankLabel} numberOfLines={1}>
             {label}
           </Text>
           <View style={styles.barTrack}>
-            <View
-              style={[styles.barFill, { flex: count / max }]}
-            />
+            <View style={[styles.barFill, { flex: count / max }]} />
             <View style={{ flex: 1 - count / max }} />
           </View>
           <Text style={styles.rankCount}>{count}</Text>
@@ -56,8 +55,8 @@ function ActivationChart({ entries }: { entries: CheckInEntry[] }) {
   if (recent.length === 0) return null;
 
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionLabel}>Activation over time</Text>
+    <View style={styles.card}>
+      <Text style={styles.cardLabel}>Activation over time</Text>
       <View style={styles.chart}>
         {recent.map((entry) => (
           <View key={entry.id} style={styles.barCol}>
@@ -102,7 +101,7 @@ export default function AnalyticsScreen({ focused }: Props) {
   if (loading) {
     return (
       <View style={styles.empty}>
-        <ActivityIndicator color="#7C3AED" />
+        <ActivityIndicator color={Colors.primary} />
       </View>
     );
   }
@@ -132,9 +131,10 @@ export default function AnalyticsScreen({ focused }: Props) {
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.title}>Analytics</Text>
+      <View style={styles.headingBlock}>
+        <Text style={styles.title}>Analytics</Text>
+      </View>
 
-      {/* Summary stats */}
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
           <Text style={styles.statNumber}>{entries.length}</Text>
@@ -163,79 +163,88 @@ export default function AnalyticsScreen({ focused }: Props) {
 const styles = StyleSheet.create({
   scroll: {
     flex: 1,
-    backgroundColor: "#FAF9F7",
+    backgroundColor: Colors.background,
   },
   container: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
+    paddingHorizontal: 20,
+    paddingTop: 28,
     paddingBottom: 48,
+    gap: 14,
+  },
+  headingBlock: {
+    paddingHorizontal: 4,
+    marginBottom: 6,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#111827",
-    letterSpacing: -0.5,
-    marginBottom: 24,
+    fontSize: 32,
+    fontFamily: Fonts.serif,
+    color: Colors.textPrimary,
+    letterSpacing: 0.3,
   },
   statsRow: {
     flexDirection: "row",
     gap: 12,
-    marginBottom: 36,
   },
   statCard: {
     flex: 1,
-    backgroundColor: "#F3F0FF",
-    borderRadius: 14,
+    backgroundColor: Colors.primaryLight,
+    borderRadius: 16,
     padding: 16,
     alignItems: "center",
   },
   statNumber: {
     fontSize: 28,
-    fontWeight: "700",
-    color: "#7C3AED",
+    fontFamily: Fonts.serif,
+    color: Colors.primaryDark,
   },
   statLabel: {
     fontSize: 12,
-    color: "#6B7280",
-    marginTop: 2,
+    fontFamily: Fonts.sansLight,
+    color: Colors.textSecondary,
+    marginTop: 3,
     textAlign: "center",
   },
-  section: {
-    marginBottom: 36,
+  card: {
+    backgroundColor: Colors.surface,
+    borderRadius: 18,
+    padding: 20,
+    ...Shadow.card,
   },
-  sectionLabel: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#1F2937",
-    marginBottom: 14,
+  cardLabel: {
+    fontSize: 16,
+    fontFamily: Fonts.sansSemiBold,
+    color: Colors.textPrimary,
+    marginBottom: 16,
   },
   rankRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 12,
     gap: 10,
   },
   rankLabel: {
-    width: 160,
+    width: 150,
     fontSize: 13,
-    color: "#374151",
+    fontFamily: Fonts.sans,
+    color: Colors.textSecondary,
   },
   barTrack: {
     flex: 1,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#E5E7EB",
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.divider,
     flexDirection: "row",
     overflow: "hidden",
   },
   barFill: {
-    backgroundColor: "#7C3AED",
-    borderRadius: 4,
+    backgroundColor: Colors.primary,
+    borderRadius: 3,
   },
   rankCount: {
     width: 20,
     fontSize: 13,
-    color: "#9CA3AF",
+    fontFamily: Fonts.sans,
+    color: Colors.textMuted,
     textAlign: "right",
   },
   chart: {
@@ -243,6 +252,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     height: 100,
     gap: 4,
+    marginBottom: 8,
   },
   barCol: {
     flex: 1,
@@ -256,41 +266,43 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   chartBar: {
-    backgroundColor: "#7C3AED",
+    backgroundColor: Colors.primary,
     borderRadius: 3,
     minHeight: 4,
   },
   chartBarLabel: {
     fontSize: 9,
-    color: "#9CA3AF",
-    marginTop: 3,
+    fontFamily: Fonts.sans,
+    color: Colors.textMuted,
+    marginTop: 4,
   },
   chartLegend: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 6,
   },
   chartLegendText: {
     fontSize: 11,
-    color: "#9CA3AF",
+    fontFamily: Fonts.sansLight,
+    color: Colors.textMuted,
   },
   empty: {
     flex: 1,
-    backgroundColor: "#FAF9F7",
+    backgroundColor: Colors.background,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 32,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 8,
+    fontSize: 22,
+    fontFamily: Fonts.serif,
+    color: Colors.textPrimary,
+    marginBottom: 10,
   },
   emptySubtitle: {
     fontSize: 15,
-    color: "#9CA3AF",
+    fontFamily: Fonts.sansLight,
+    color: Colors.textMuted,
     textAlign: "center",
-    lineHeight: 22,
+    lineHeight: 24,
   },
 });
