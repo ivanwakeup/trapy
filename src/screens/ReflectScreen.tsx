@@ -6,8 +6,10 @@ import {
   Pressable,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../lib/AuthContext";
 import TagSelector from "../components/TagSelector";
 import { TRIGGERS, THOUGHTS, URGES } from "../data/tags";
 import { CheckInEntry } from "../types";
@@ -20,9 +22,11 @@ interface Props {
 }
 
 export default function ReflectScreen({ activationLevel, showReframeAfter, onSaved }: Props) {
+  const { user } = useAuth();
   const [triggers, setTriggers] = useState<string[]>([]);
   const [thoughts, setThoughts] = useState<string[]>([]);
   const [urges, setUrges] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
 
   function toggleTag(
     list: string[],
@@ -35,24 +39,36 @@ export default function ReflectScreen({ activationLevel, showReframeAfter, onSav
   }
 
   async function handleSave() {
-    const entry: CheckInEntry = {
-      id: Date.now().toString(),
-      timestamp: new Date().toISOString(),
-      activationLevel,
-      triggers,
-      thoughts,
-      urges,
-    };
+    setSaving(true);
 
-    try {
-      const existing = await AsyncStorage.getItem("checkins");
-      const entries: CheckInEntry[] = existing ? JSON.parse(existing) : [];
-      entries.unshift(entry);
-      await AsyncStorage.setItem("checkins", JSON.stringify(entries));
-      onSaved(entry);
-    } catch {
+    const { data, error } = await supabase
+      .from("checkins")
+      .insert({
+        user_id: user!.id,
+        activation_level: activationLevel,
+        triggers,
+        thoughts,
+        urges,
+      })
+      .select()
+      .single();
+
+    setSaving(false);
+
+    if (error || !data) {
       Alert.alert("Error", "Could not save. Please try again.");
+      return;
     }
+
+    const entry: CheckInEntry = {
+      id: data.id,
+      timestamp: data.created_at,
+      activationLevel: data.activation_level,
+      triggers: data.triggers,
+      thoughts: data.thoughts,
+      urges: data.urges,
+    };
+    onSaved(entry);
   }
 
   return (
@@ -102,10 +118,17 @@ export default function ReflectScreen({ activationLevel, showReframeAfter, onSav
         />
       </View>
 
-      <Pressable style={styles.saveButton} onPress={handleSave}>
-        <Text style={styles.saveButtonText}>
-          {showReframeAfter ? "Save and continue" : "Save"}
-        </Text>
+      <Pressable
+        style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+        onPress={handleSave}
+        disabled={saving}
+      >
+        {saving
+          ? <ActivityIndicator color={Colors.surface} />
+          : <Text style={styles.saveButtonText}>
+              {showReframeAfter ? "Save and continue" : "Save"}
+            </Text>
+        }
       </Pressable>
     </ScrollView>
   );
@@ -162,6 +185,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     marginTop: 8,
+  },
+  saveButtonDisabled: {
+    opacity: 0.6,
   },
   saveButtonText: {
     color: Colors.surface,

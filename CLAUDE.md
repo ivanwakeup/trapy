@@ -8,8 +8,8 @@ An iOS journaling app for anxious attachment — helps users recognize triggers,
 
 - **Expo SDK 54** with React Native 0.81.5 and React 19
 - **TypeScript** throughout
-- **AsyncStorage** for local persistence
-- **Supabase** for auth (email OTP); database migration is next
+- **Supabase** for auth (email OTP) and check-in storage
+- **AsyncStorage** used only by Supabase's session persistence internally
 - Entry point: `index.ts` → `App.tsx`
 
 ## Project structure
@@ -114,6 +114,7 @@ New features are specced in `features/` before implementation. Use `features/_te
 
 Active specs:
 - `features/auth.md` — email OTP auth via Supabase (done)
+- `features/supabase-migration.md` — move check-ins from AsyncStorage to Supabase DB (done)
 - `features/navigation-restructure.md` — activation-based routing (done)
 - `features/analytics.md` — analytics screen (done)
 - `features/archived/` — superseded specs

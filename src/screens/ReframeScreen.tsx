@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { supabase } from "../lib/supabase";
 import { CheckInEntry } from "../types";
 import { selectReframe } from "../data/reframes";
 import { Colors, Fonts } from "../theme";
@@ -28,13 +28,13 @@ export default function ReframeScreen({ entry, onDone }: Props) {
 
   async function saveReflection(reflection: CheckInEntry["reflection"]) {
     try {
-      const raw = await AsyncStorage.getItem("checkins");
-      const entries: CheckInEntry[] = raw ? JSON.parse(raw) : [];
-      const idx = entries.findIndex((e) => e.id === entry.id);
-      if (idx !== -1) {
-        entries[idx] = { ...entries[idx], reflection };
-        await AsyncStorage.setItem("checkins", JSON.stringify(entries));
-      }
+      await supabase
+        .from("checkins")
+        .update({
+          open_to_reframe: reflection!.openToReframe,
+          reframe_offered: reflection!.reframeOffered ?? null,
+        })
+        .eq("id", entry.id);
     } catch {
       // non-critical
     }

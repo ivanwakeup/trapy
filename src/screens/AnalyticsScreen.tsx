@@ -6,7 +6,8 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../lib/AuthContext";
 import { CheckInEntry } from "../types";
 import { Colors, Fonts, Shadow } from "../theme";
 
@@ -86,16 +87,38 @@ interface Props {
 }
 
 export default function AnalyticsScreen({ focused }: Props) {
+  const { user } = useAuth();
   const [entries, setEntries] = useState<CheckInEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!focused) return;
     setLoading(true);
-    AsyncStorage.getItem("checkins").then((raw) => {
-      setEntries(raw ? JSON.parse(raw) : []);
-      setLoading(false);
-    });
+    supabase
+      .from("checkins")
+      .select("*")
+      .eq("user_id", user!.id)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        setEntries(
+          (data ?? []).map((row) => ({
+            id: row.id,
+            timestamp: row.created_at,
+            activationLevel: row.activation_level,
+            triggers: row.triggers,
+            thoughts: row.thoughts,
+            urges: row.urges,
+            reflection:
+              row.open_to_reframe !== null
+                ? {
+                    openToReframe: row.open_to_reframe,
+                    reframeOffered: row.reframe_offered ?? undefined,
+                  }
+                : undefined,
+          }))
+        );
+        setLoading(false);
+      });
   }, [focused]);
 
   if (loading) {
