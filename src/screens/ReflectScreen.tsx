@@ -19,14 +19,16 @@ interface Props {
   activationLevel: number;
   showReframeAfter: boolean;
   onSaved: (entry: CheckInEntry) => void;
+  onJournal?: (checkinId: string) => void;
 }
 
-export default function ReflectScreen({ activationLevel, showReframeAfter, onSaved }: Props) {
+export default function ReflectScreen({ activationLevel, showReframeAfter, onSaved, onJournal }: Props) {
   const { user } = useAuth();
   const [triggers, setTriggers] = useState<string[]>([]);
   const [thoughts, setThoughts] = useState<string[]>([]);
   const [urges, setUrges] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [savedEntry, setSavedEntry] = useState<CheckInEntry | null>(null);
 
   function toggleTag(
     list: string[],
@@ -68,7 +70,30 @@ export default function ReflectScreen({ activationLevel, showReframeAfter, onSav
       thoughts: data.thoughts,
       urges: data.urges,
     };
-    onSaved(entry);
+
+    if (showReframeAfter) {
+      onSaved(entry);
+    } else {
+      setSavedEntry(entry);
+    }
+  }
+
+  if (savedEntry) {
+    return (
+      <View style={styles.promptContainer}>
+        <Text style={styles.promptSaved}>Saved ✓</Text>
+        <Text style={styles.promptQuestion}>Want to write more about this?</Text>
+        <View style={styles.promptRow}>
+          <Pressable onPress={() => onJournal?.(savedEntry.id)}>
+            <Text style={styles.promptYes}>Yes, open journal</Text>
+          </Pressable>
+          <Text style={styles.promptSep}>·</Text>
+          <Pressable onPress={() => onSaved(savedEntry)}>
+            <Text style={styles.promptNo}>No, I'm done</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
   }
 
   return (
@@ -194,5 +219,46 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: Fonts.sansSemiBold,
     letterSpacing: 0.3,
+  },
+  promptContainer: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 36,
+  },
+  promptSaved: {
+    fontSize: 12,
+    fontFamily: Fonts.sans,
+    color: Colors.textMuted,
+    letterSpacing: 0.5,
+    marginBottom: 32,
+  },
+  promptQuestion: {
+    fontSize: 26,
+    fontFamily: Fonts.serif,
+    color: Colors.textPrimary,
+    textAlign: "center",
+    lineHeight: 36,
+    marginBottom: 32,
+  },
+  promptRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  promptYes: {
+    fontSize: 15,
+    fontFamily: Fonts.sansMedium,
+    color: Colors.primaryDark,
+  },
+  promptSep: {
+    fontSize: 14,
+    color: Colors.textMuted,
+  },
+  promptNo: {
+    fontSize: 15,
+    fontFamily: Fonts.sans,
+    color: Colors.textMuted,
   },
 });

@@ -5,14 +5,15 @@ import { CheckInEntry } from "../types";
 import { selectReframe } from "../data/reframes";
 import { Colors, Fonts } from "../theme";
 
-type Step = "openness" | "reframe" | "grounding";
+type Step = "openness" | "reframe" | "grounding" | "journal-prompt";
 
 interface Props {
   entry: CheckInEntry;
   onDone: () => void;
+  onJournal?: (checkinId: string) => void;
 }
 
-export default function ReframeScreen({ entry, onDone }: Props) {
+export default function ReframeScreen({ entry, onDone, onJournal }: Props) {
   const [step, setStep] = useState<Step>("openness");
   const reframe = selectReframe(entry);
 
@@ -68,7 +69,7 @@ export default function ReframeScreen({ entry, onDone }: Props) {
       {step === "reframe" && (
         <View style={styles.inner}>
           <Text style={styles.reframeText}>{reframe}</Text>
-          <Pressable style={styles.doneButton} onPress={onDone}>
+          <Pressable style={styles.doneButton} onPress={() => setStep("journal-prompt")}>
             <Text style={styles.doneButtonText}>Done</Text>
           </Pressable>
         </View>
@@ -79,9 +80,24 @@ export default function ReframeScreen({ entry, onDone }: Props) {
           <Text style={styles.reframeText}>
             That's ok. You don't have to figure it out right now.
           </Text>
-          <Pressable style={styles.doneButton} onPress={onDone}>
+          <Pressable style={styles.doneButton} onPress={() => setStep("journal-prompt")}>
             <Text style={styles.doneButtonText}>Done</Text>
           </Pressable>
+        </View>
+      )}
+
+      {step === "journal-prompt" && (
+        <View style={styles.inner}>
+          <Text style={styles.promptQuestion}>Want to write more about this?</Text>
+          <View style={styles.promptRow}>
+            <Pressable onPress={() => onJournal?.(entry.id)}>
+              <Text style={styles.promptYes}>Yes, open journal</Text>
+            </Pressable>
+            <Text style={styles.promptSep}>·</Text>
+            <Pressable onPress={onDone}>
+              <Text style={styles.promptNo}>No, I'm done</Text>
+            </Pressable>
+          </View>
         </View>
       )}
     </View>
@@ -164,5 +180,33 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: Fonts.sansSemiBold,
     letterSpacing: 0.3,
+  },
+  promptQuestion: {
+    fontSize: 26,
+    fontFamily: Fonts.serif,
+    color: Colors.textPrimary,
+    textAlign: "center",
+    lineHeight: 36,
+    marginBottom: 32,
+  },
+  promptRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+  promptYes: {
+    fontSize: 15,
+    fontFamily: Fonts.sansMedium,
+    color: Colors.primaryDark,
+  },
+  promptSep: {
+    fontSize: 14,
+    color: Colors.textMuted,
+  },
+  promptNo: {
+    fontSize: 15,
+    fontFamily: Fonts.sans,
+    color: Colors.textMuted,
   },
 });

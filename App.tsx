@@ -25,12 +25,16 @@ import ReflectScreen from "./src/screens/ReflectScreen";
 import ReframeScreen from "./src/screens/ReframeScreen";
 import CalmDownScreen from "./src/screens/CalmDownScreen";
 import AnalyticsScreen from "./src/screens/AnalyticsScreen";
+import JournalListScreen from "./src/screens/JournalListScreen";
+import JournalEditorScreen from "./src/screens/JournalEditorScreen";
 import { CheckInEntry } from "./src/types";
 import { Colors, Fonts } from "./src/theme";
 
 type AppScreen =
   | { screen: "home" }
   | { screen: "analytics" }
+  | { screen: "journal" }
+  | { screen: "journal-editor"; entryId?: string; checkinId?: string }
   | { screen: "choice"; activationLevel: number }
   | { screen: "reflect"; activationLevel: number; showReframeAfter: boolean }
   | { screen: "reframe"; entry: CheckInEntry }
@@ -43,12 +47,18 @@ function headerTitle(current: AppScreen): string {
     case "home": return "trapy";
     case "analytics": return "Analytics";
     case "reflect": return "Reflect";
+    case "journal": return "Journal";
     default: return "";
   }
 }
 
 function showHeader(current: AppScreen): boolean {
-  return current.screen === "home" || current.screen === "analytics" || current.screen === "reflect";
+  return (
+    current.screen === "home" ||
+    current.screen === "analytics" ||
+    current.screen === "reflect" ||
+    current.screen === "journal"
+  );
 }
 
 function routeFromActivation(level: number): AppScreen {
@@ -119,6 +129,9 @@ function MainApp() {
                 setCurrent({ screen: "home" });
               }
             }}
+            onJournal={(checkinId) =>
+              setCurrent({ screen: "journal-editor", checkinId })
+            }
           />
         );
       case "reframe":
@@ -126,22 +139,47 @@ function MainApp() {
           <ReframeScreen
             entry={current.entry}
             onDone={() => setCurrent({ screen: "home" })}
+            onJournal={(checkinId) =>
+              setCurrent({ screen: "journal-editor", checkinId })
+            }
           />
         );
       case "calmdown":
         return <CalmDownScreen onDone={() => setCurrent({ screen: "home" })} />;
       case "analytics":
         return <AnalyticsScreen focused />;
+      case "journal":
+        return (
+          <JournalListScreen
+            focused
+            onNewEntry={() => setCurrent({ screen: "journal-editor" })}
+            onEditEntry={(entryId) => setCurrent({ screen: "journal-editor", entryId })}
+          />
+        );
+      case "journal-editor":
+        return (
+          <JournalEditorScreen
+            entryId={current.entryId}
+            checkinId={current.checkinId}
+            onSaved={() => setCurrent({ screen: "journal" })}
+            onBack={() => setCurrent({ screen: "journal" })}
+          />
+        );
     }
   }
 
   const drawerItems: { label: string; target: AppScreen }[] = [
     { label: "Home", target: { screen: "home" } },
+    { label: "Journal", target: { screen: "journal" } },
     { label: "Analytics", target: { screen: "analytics" } },
   ];
 
   const activeDrawerItem =
-    current.screen === "analytics" ? "Analytics" : "Home";
+    current.screen === "analytics"
+      ? "Analytics"
+      : current.screen === "journal" || current.screen === "journal-editor"
+      ? "Journal"
+      : "Home";
 
   return (
     <SafeAreaView style={styles.root}>

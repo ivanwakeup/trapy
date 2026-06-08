@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { View, Text, Pressable, Animated, StyleSheet } from "react-native";
-import { Colors, Fonts } from "../theme";
+import { Colors, Fonts, Shadow } from "../theme";
 
 type Phase = "breathing" | "grounding";
 
@@ -209,11 +209,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "100%",
     marginBottom: 28,
-    shadowColor: Colors.textPrimary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    ...Shadow.card,
   },
   groundingCount: {
     fontSize: 56,

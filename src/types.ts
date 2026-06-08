@@ -12,3 +12,11 @@ export interface CheckInEntry {
   urges: string[];
   reflection?: Reflection;
 }
+
+export interface JournalEntry {
+  id: string;
+  timestamp: string;
+  updatedAt: string;
+  body: string;
+  checkinId?: string;
+}

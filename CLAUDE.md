@@ -115,6 +115,7 @@ New features are specced in `features/` before implementation. Use `features/_te
 Active specs:
 - `features/auth.md` — email OTP auth via Supabase (done)
 - `features/supabase-migration.md` — move check-ins from AsyncStorage to Supabase DB (done)
+- `features/journal.md` — free-text journal entries with Supabase storage; RAG corpus (done)
 - `features/navigation-restructure.md` — activation-based routing (done)
 - `features/analytics.md` — analytics screen (done)
 - `features/archived/` — superseded specs
