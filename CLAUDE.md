@@ -104,6 +104,10 @@ Priority: thought tags (in order defined in `tags.ts`) → fallback by activatio
 
 **Use `expo install` for native packages** — Always `npx expo install <package>`, not `npm install`. Ensures correct SDK-compatible version. Example: `@react-native-async-storage/async-storage` must be `2.2.0`, not `3.x`.
 
+**Google AI Studio API key** — required for the Edge Function (chunking via Gemini + embeddings via `gemini-embedding-001`). Set once with `supabase secrets set GOOGLE_AI_API_KEY=<key>` — persists across deploys. For local function dev, also add to `supabase/.env` (gitignored).
+
+**Google AI Studio free tier** — the project must be created without billing enabled to get free tier access. If billing is attached, the free tier quota becomes 0 and all requests 429. Current working models on free tier: `gemini-2.5-flash-lite` (chunking), `gemini-embedding-001` (embeddings). Models like `gemini-2.0-flash` and `gemini-2.5-flash` require billing.
+
 **Supabase OTP is 8 digits** — Supabase now sends 8-digit codes, not 6. The input, validation guard, and email template must all use 8. Editing Supabase email templates requires custom SMTP — use Resend (free tier, smtp.resend.com port 587, username `resend`, password is your Resend API key).
 
 **Analytics screen refresh** — `AnalyticsScreen` is always passed `focused={true}` since it only mounts when active. The `focused` prop triggers a `useEffect` reload from AsyncStorage.
@@ -116,6 +120,7 @@ Active specs:
 - `features/auth.md` — email OTP auth via Supabase (done)
 - `features/supabase-migration.md` — move check-ins from AsyncStorage to Supabase DB (done)
 - `features/journal.md` — free-text journal entries with Supabase storage; RAG corpus (done)
+- `features/rag-pipeline.md` — LLM chunking + embedding pipeline for journal entries (done)
 - `features/navigation-restructure.md` — activation-based routing (done)
 - `features/analytics.md` — analytics screen (done)
 - `features/archived/` — superseded specs
