@@ -20,3 +20,10 @@ export interface JournalEntry {
   body: string;
   checkinId?: string;
 }
+
+export interface AIMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: string;
+}

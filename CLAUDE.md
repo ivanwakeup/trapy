@@ -121,6 +121,7 @@ Active specs:
 - `features/supabase-migration.md` — move check-ins from AsyncStorage to Supabase DB (done)
 - `features/journal.md` — free-text journal entries with Supabase storage; RAG corpus (done)
 - `features/rag-pipeline.md` — LLM chunking + embedding pipeline for journal entries (done)
+- `features/ai-chat.md` — conversational AI companion using RAG-retrieved journal context (done)
 - `features/navigation-restructure.md` — activation-based routing (done)
 - `features/analytics.md` — analytics screen (done)
 - `features/archived/` — superseded specs

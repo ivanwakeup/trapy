@@ -27,6 +27,7 @@ import CalmDownScreen from "./src/screens/CalmDownScreen";
 import AnalyticsScreen from "./src/screens/AnalyticsScreen";
 import JournalListScreen from "./src/screens/JournalListScreen";
 import JournalEditorScreen from "./src/screens/JournalEditorScreen";
+import AIScreen from "./src/screens/AIScreen";
 import { CheckInEntry } from "./src/types";
 import { Colors, Fonts } from "./src/theme";
 
@@ -35,6 +36,7 @@ type AppScreen =
   | { screen: "analytics" }
   | { screen: "journal" }
   | { screen: "journal-editor"; entryId?: string; checkinId?: string }
+  | { screen: "ai" }
   | { screen: "choice"; activationLevel: number }
   | { screen: "reflect"; activationLevel: number; showReframeAfter: boolean }
   | { screen: "reframe"; entry: CheckInEntry }
@@ -58,6 +60,7 @@ function showHeader(current: AppScreen): boolean {
     current.screen === "analytics" ||
     current.screen === "reflect" ||
     current.screen === "journal"
+    // "ai" manages its own top bar
   );
 }
 
@@ -165,12 +168,15 @@ function MainApp() {
             onBack={() => setCurrent({ screen: "journal" })}
           />
         );
+      case "ai":
+        return <AIScreen />;
     }
   }
 
   const drawerItems: { label: string; target: AppScreen }[] = [
     { label: "Home", target: { screen: "home" } },
     { label: "Journal", target: { screen: "journal" } },
+    { label: "AI", target: { screen: "ai" } },
     { label: "Analytics", target: { screen: "analytics" } },
   ];
 
@@ -179,6 +185,8 @@ function MainApp() {
       ? "Analytics"
       : current.screen === "journal" || current.screen === "journal-editor"
       ? "Journal"
+      : current.screen === "ai"
+      ? "AI"
       : "Home";
 
   return (
