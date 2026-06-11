@@ -1,14 +1,14 @@
 export const Colors = {
-  primary: "#76D7C4",
-  primaryDark: "#5AB8AA",
-  primaryLight: "#EBF8F6",
-  background: "#FAF9F7",
-  surface: "#FFFFFF",
-  textPrimary: "#1C3330",
-  textSecondary: "#5E8C87",
-  textMuted: "#A8C5C1",
-  border: "#E0F0EE",
-  divider: "#F0F7F6",
+  primary: "#7EB5A6",
+  primaryDark: "#5C9E8F",
+  primaryLight: "#1E312D",
+  background: "#1A2420",
+  surface: "#232F2B",
+  textPrimary: "#EEF4F2",
+  textSecondary: "#8BAAA5",
+  textMuted: "#567872",
+  border: "#2D3D39",
+  divider: "#1F2B28",
 };
 
 export const Fonts = {
