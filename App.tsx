@@ -169,7 +169,7 @@ function MainApp() {
           />
         );
       case "ai":
-        return <AIScreen />;
+        return <AIScreen onOpenDrawer={openDrawer} />;
     }
   }
 

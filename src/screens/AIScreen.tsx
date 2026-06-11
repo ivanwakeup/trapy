@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Animated,
 } from "react-native";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/AuthContext";
@@ -17,7 +18,67 @@ import { Colors, Fonts } from "../theme";
 
 const FUNCTION_URL = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/chat-with-ai`;
 
-export default function AIScreen() {
+function TypingIndicator() {
+  const dots = [useRef(new Animated.Value(0)).current, useRef(new Animated.Value(0)).current, useRef(new Animated.Value(0)).current];
+
+  useEffect(() => {
+    const animations = dots.map((dot, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(i * 150),
+          Animated.timing(dot, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.timing(dot, { toValue: 0, duration: 300, useNativeDriver: true }),
+          Animated.delay((dots.length - i - 1) * 150),
+        ])
+      )
+    );
+    animations.forEach((a) => a.start());
+    return () => animations.forEach((a) => a.stop());
+  }, []);
+
+  return (
+    <View style={typingStyles.bubble}>
+      {dots.map((dot, i) => (
+        <Animated.View
+          key={i}
+          style={[typingStyles.dot, { opacity: dot }]}
+        />
+      ))}
+    </View>
+  );
+}
+
+const typingStyles = StyleSheet.create({
+  bubble: {
+    flexDirection: "row",
+    alignSelf: "flex-start",
+    backgroundColor: Colors.surface,
+    borderRadius: 18,
+    borderBottomLeftRadius: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 5,
+    marginHorizontal: 16,
+    marginTop: 4,
+    shadowColor: Colors.textPrimary,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: Colors.textMuted,
+  },
+});
+
+interface Props {
+  onOpenDrawer: () => void;
+}
+
+export default function AIScreen({ onOpenDrawer }: Props) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -136,6 +197,11 @@ export default function AIScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <View style={styles.topBar}>
+        <Pressable onPress={onOpenDrawer} style={styles.hamburger} hitSlop={12}>
+          <View style={styles.bar} />
+          <View style={styles.bar} />
+          <View style={styles.bar} />
+        </Pressable>
         <Text style={styles.topBarTitle}>AI</Text>
         <Pressable onPress={handleNewConversation} hitSlop={12}>
           <Text style={styles.newConvLink}>New conversation</Text>
@@ -174,11 +240,7 @@ export default function AIScreen() {
         />
       )}
 
-      {loading && (
-        <View style={styles.typingIndicator}>
-          <ActivityIndicator size="small" color={Colors.textMuted} />
-        </View>
-      )}
+      {loading && <TypingIndicator />}
 
       <View style={styles.inputRow}>
         <TextInput
@@ -224,6 +286,16 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.divider,
+  },
+  hamburger: {
+    width: 28,
+    gap: 5,
+    paddingVertical: 4,
+  },
+  bar: {
+    height: 1.5,
+    backgroundColor: Colors.textPrimary,
+    borderRadius: 2,
   },
   topBarTitle: {
     fontSize: 17,
@@ -293,10 +365,6 @@ const styles = StyleSheet.create({
   bubbleTextAI: {
     fontFamily: Fonts.sans,
     color: Colors.textPrimary,
-  },
-  typingIndicator: {
-    paddingHorizontal: 24,
-    paddingVertical: 8,
   },
   inputRow: {
     flexDirection: "row",
