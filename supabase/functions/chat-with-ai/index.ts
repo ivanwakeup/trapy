@@ -1,38 +1,12 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getAIProvider } from "./ai.ts";
+import { getPersona } from "./persona.ts";
 import { GoogleEmbeddingProvider } from "./providers/google-embedding.ts";
 
 interface RequestPayload {
   conversation_id: string | null;
   message: string;
   user_id: string;
-}
-
-interface JournalChunk {
-  id: string;
-  text: string;
-  emotional_tone: string;
-  arc_position: string;
-}
-
-function buildSystemPrompt(chunks: JournalChunk[]): string {
-  const chunkContext = chunks.length > 0
-    ? chunks
-        .map((c) => `[${c.emotional_tone} — ${c.arc_position}]: "${c.text}"`)
-        .join("\n\n")
-    : "No relevant journal history found yet.";
-
-  return `You are a compassionate companion for someone working on understanding their anxious attachment patterns.
-
-Your role is to help them reflect — not to give advice, diagnose, or fix. Be warm, curious, and present. Ask one good question at a time. Validate before you explore.
-
-Here is relevant context from this person's journal history — past moments that may connect to what they're sharing now:
-
-${chunkContext}
-
-Use this context naturally. If something from their past is clearly relevant, you can gently reference it ("I remember you wrote about..."). Don't force connections that aren't there. If there's no relevant history yet, just be present with what they're sharing now.
-
-Keep responses concise — 2-4 sentences unless they ask for more. You are not a therapist. If they seem to be in crisis, gently encourage them to reach out to a professional.`;
 }
 
 const corsHeaders = {
@@ -94,12 +68,13 @@ Deno.serve(async (req) => {
     ];
 
     // Build prompt and call AI
-    const systemPrompt = buildSystemPrompt(chunks ?? []);
+    const persona = getPersona();
+    const systemPrompt = persona.buildSystemPrompt(chunks ?? []);
     const ai = getAIProvider();
     const response = await ai.chat(messages, systemPrompt);
 
     // Save both messages
-    const chunkIds = (chunks ?? []).map((c: JournalChunk) => c.id);
+    const chunkIds = (chunks ?? []).map((c: { id: string }) => c.id);
     await supabase.from("ai_messages").insert([
       { conversation_id: convId, user_id, role: "user", content: message },
       {

@@ -49,3 +49,4 @@ Read-only. Reads from the same `"checkins"` AsyncStorage key as the check-in fea
 - Exporting data
 - Per-entry drill-down
 - Trend lines or moving averages
+
