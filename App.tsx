@@ -104,6 +104,10 @@ function MainApp() {
         return (
           <HomeScreen
             onContinue={(level) => setCurrent(routeFromActivation(level))}
+            onGoToAnalytics={() => setCurrent({ screen: "analytics" })}
+            onGoToJournal={() => setCurrent({ screen: "journal" })}
+            onGoToNewJournal={() => setCurrent({ screen: "journal-editor" })}
+            onGoToAI={() => setCurrent({ screen: "ai" })}
           />
         );
       case "choice":
@@ -217,9 +221,11 @@ function MainApp() {
           <Pressable
             key={label}
             onPress={() => navigateTo(target)}
-            style={[
+            style={({ pressed, hovered }: any) => [
               styles.drawerItem,
               activeDrawerItem === label && styles.drawerItemActive,
+              hovered && activeDrawerItem !== label && styles.drawerItemHovered,
+              pressed && styles.drawerItemPressed,
             ]}
           >
             <Text
@@ -353,6 +359,12 @@ const styles = StyleSheet.create({
   },
   drawerItemActive: {
     backgroundColor: Colors.primaryLight,
+  },
+  drawerItemHovered: {
+    backgroundColor: Colors.surfaceHover,
+  },
+  drawerItemPressed: {
+    backgroundColor: Colors.surfacePressed,
   },
   drawerItemText: {
     fontSize: 16,

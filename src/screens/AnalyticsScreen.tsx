@@ -9,7 +9,8 @@ import {
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/AuthContext";
 import { CheckInEntry } from "../types";
-import { Colors, Fonts, Shadow } from "../theme";
+import { Colors, Fonts } from "../theme";
+import Card from "../components/Card";
 
 function topN(items: string[], n = 5): { label: string; count: number }[] {
   const counts: Record<string, number> = {};
@@ -33,7 +34,7 @@ function RankedList({
   const max = items[0].count;
 
   return (
-    <View style={styles.card}>
+    <Card style={styles.cardPadding}>
       <Text style={styles.cardLabel}>{title}</Text>
       {items.map(({ label, count }) => (
         <View key={label} style={styles.rankRow}>
@@ -47,7 +48,7 @@ function RankedList({
           <Text style={styles.rankCount}>{count}</Text>
         </View>
       ))}
-    </View>
+    </Card>
   );
 }
 
@@ -56,7 +57,7 @@ function ActivationChart({ entries }: { entries: CheckInEntry[] }) {
   if (recent.length === 0) return null;
 
   return (
-    <View style={styles.card}>
+    <Card style={styles.cardPadding}>
       <Text style={styles.cardLabel}>Activation over time</Text>
       <View style={styles.chart}>
         {recent.map((entry) => (
@@ -78,7 +79,7 @@ function ActivationChart({ entries }: { entries: CheckInEntry[] }) {
         <Text style={styles.chartLegendText}>older</Text>
         <Text style={styles.chartLegendText}>recent</Text>
       </View>
-    </View>
+    </Card>
   );
 }
 
@@ -227,11 +228,8 @@ const styles = StyleSheet.create({
     marginTop: 3,
     textAlign: "center",
   },
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: 18,
+  cardPadding: {
     padding: 20,
-    ...Shadow.card,
   },
   cardLabel: {
     fontSize: 16,

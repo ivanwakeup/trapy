@@ -10,7 +10,8 @@ import {
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/AuthContext";
 import { JournalEntry } from "../types";
-import { Colors, Fonts, Shadow } from "../theme";
+import { Colors, Fonts } from "../theme";
+import Card from "../components/Card";
 
 interface Props {
   focused: boolean;
@@ -73,9 +74,9 @@ export default function JournalListScreen({ focused, onNewEntry, onEditEntry }: 
         </View>
       ) : (
         entries.map((entry) => (
-          <Pressable
+          <Card
             key={entry.id}
-            style={styles.card}
+            style={styles.entry}
             onPress={() => onEditEntry(entry.id)}
           >
             <Text style={styles.cardDate}>
@@ -88,7 +89,7 @@ export default function JournalListScreen({ focused, onNewEntry, onEditEntry }: 
             <Text style={styles.cardPreview} numberOfLines={2}>
               {entry.body || "Empty entry"}
             </Text>
-          </Pressable>
+          </Card>
         ))
       )}
     </ScrollView>
@@ -149,11 +150,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 24,
   },
-  card: {
-    backgroundColor: Colors.surface,
+  entry: {
     borderRadius: 16,
     padding: 18,
-    ...Shadow.card,
   },
   cardDate: {
     fontSize: 12,
