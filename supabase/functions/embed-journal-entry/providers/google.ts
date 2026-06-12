@@ -12,9 +12,14 @@ export class GoogleEmbeddingProvider implements EmbeddingProvider {
 
   private async callWithRetry(url: string, init: RequestInit, attempt = 1): Promise<Response> {
     const res = await fetch(url, init);
-    if (res.status === 429 && attempt < 5) {
-      const delay = Math.pow(2, attempt) * 2000;
-      console.warn(`Embedding 429 — retrying in ${delay / 1000}s (attempt ${attempt}/4)`);
+    if (res.status === 429 && attempt < 4) {
+      const body = await res.clone().text();
+      if (body.includes("quota") || body.includes("RESOURCE_EXHAUSTED")) {
+        console.error("Gemini daily quota exhausted. Resets at midnight Pacific.");
+        return res;
+      }
+      const delay = Math.pow(2, attempt) * 3000;
+      console.warn(`Embedding RPM throttle — retrying in ${delay / 1000}s (attempt ${attempt}/3)`);
       await new Promise((r) => setTimeout(r, delay));
       return this.callWithRetry(url, init, attempt + 1);
     }

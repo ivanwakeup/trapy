@@ -11,9 +11,16 @@ export class GeminiChunkingProvider implements ChunkingProvider {
 
   private async callWithRetry(url: string, init: RequestInit, attempt = 1): Promise<Response> {
     const res = await fetch(url, init);
-    if (res.status === 429 && attempt < 5) {
-      const delay = Math.pow(2, attempt) * 2000; // 4s, 8s, 16s, 32s
-      console.warn(`Gemini 429 — retrying in ${delay / 1000}s (attempt ${attempt}/4)`);
+    if (res.status === 429 && attempt < 4) {
+      const body = await res.clone().text();
+      // Daily quota exhausted — no point retrying, will fail until midnight Pacific
+      if (body.includes("quota") || body.includes("RESOURCE_EXHAUSTED")) {
+        console.error("Gemini daily quota exhausted. Resets at midnight Pacific.");
+        return res;
+      }
+      // Per-minute throttle — back off and retry
+      const delay = Math.pow(2, attempt) * 3000; // 6s, 12s, 24s
+      console.warn(`Gemini RPM throttle — retrying in ${delay / 1000}s (attempt ${attempt}/3)`);
       await new Promise((r) => setTimeout(r, delay));
       return this.callWithRetry(url, init, attempt + 1);
     }

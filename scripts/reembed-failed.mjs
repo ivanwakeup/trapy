@@ -17,7 +17,7 @@ config({ path: resolve(__dirname, "../.env") });
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const USER_ID = process.env.SUPABASE_USER_ID;
-const DELAY_MS = 15000;
+const DELAY_MS = 30000; // 30s between triggers — 2/min, safe for both RPM (30) and RPD (1000)
 
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !USER_ID) {
   console.error("Missing SUPABASE_SERVICE_ROLE_KEY or SUPABASE_USER_ID");
