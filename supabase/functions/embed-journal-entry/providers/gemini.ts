@@ -9,6 +9,17 @@ export class GeminiChunkingProvider implements ChunkingProvider {
     if (!this.apiKey) throw new Error("GOOGLE_AI_API_KEY is not set");
   }
 
+  private async callWithRetry(url: string, init: RequestInit, attempt = 1): Promise<Response> {
+    const res = await fetch(url, init);
+    if (res.status === 429 && attempt < 5) {
+      const delay = Math.pow(2, attempt) * 2000; // 4s, 8s, 16s, 32s
+      console.warn(`Gemini 429 — retrying in ${delay / 1000}s (attempt ${attempt}/4)`);
+      await new Promise((r) => setTimeout(r, delay));
+      return this.callWithRetry(url, init, attempt + 1);
+    }
+    return res;
+  }
+
   async chunk(body: string, checkin?: CheckInContext): Promise<Chunk[]> {
     const checkinBlock = checkin
       ? `Context from their check-in before writing:
@@ -42,7 +53,7 @@ Rules:
 - If the entry is under 3 sentences, return it as a single chunk
 - Return only the JSON array, no other text`;
 
-    const response = await fetch(
+    const response = await this.callWithRetry(
       `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`,
       {
         method: "POST",

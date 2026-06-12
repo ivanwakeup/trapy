@@ -3,6 +3,7 @@ interface JournalChunk {
   text: string;
   emotional_tone: string;
   arc_position: string;
+  entry_date?: string;
 }
 
 export interface Persona {
@@ -10,10 +11,22 @@ export interface Persona {
   buildSystemPrompt(chunks: JournalChunk[]): string;
 }
 
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 function formatChunks(chunks: JournalChunk[]): string {
-  return chunks.length > 0
-    ? chunks.map((c) => `[${c.emotional_tone} — ${c.arc_position}]: "${c.text}"`).join("\n\n")
-    : "No relevant journal history found yet.";
+  if (chunks.length === 0) return "No relevant journal history found yet.";
+  return chunks
+    .map((c) => {
+      const date = c.entry_date ? ` — written ${formatDate(c.entry_date)}` : "";
+      return `[${c.emotional_tone} — ${c.arc_position}${date}]: "${c.text}"`;
+    })
+    .join("\n\n");
 }
 
 // Warm, validating companion — validates first, explores gently, asks one question at a time

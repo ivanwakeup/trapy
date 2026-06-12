@@ -10,8 +10,19 @@ export class GoogleEmbeddingProvider implements EmbeddingProvider {
     if (!this.apiKey) throw new Error("GOOGLE_AI_API_KEY is not set");
   }
 
+  private async callWithRetry(url: string, init: RequestInit, attempt = 1): Promise<Response> {
+    const res = await fetch(url, init);
+    if (res.status === 429 && attempt < 5) {
+      const delay = Math.pow(2, attempt) * 2000;
+      console.warn(`Embedding 429 — retrying in ${delay / 1000}s (attempt ${attempt}/4)`);
+      await new Promise((r) => setTimeout(r, delay));
+      return this.callWithRetry(url, init, attempt + 1);
+    }
+    return res;
+  }
+
   async embed(text: string): Promise<number[]> {
-    const response = await fetch(
+    const response = await this.callWithRetry(
       `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:embedContent?key=${this.apiKey}`,
       {
         method: "POST",

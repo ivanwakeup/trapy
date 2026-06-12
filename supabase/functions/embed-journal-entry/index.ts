@@ -10,6 +10,7 @@ interface WebhookPayload {
     user_id: string;
     body: string;
     checkin_id: string | null;
+    created_at: string;
   };
 }
 
@@ -60,6 +61,7 @@ Deno.serve(async (req) => {
           arc_position: chunk.arc_position,
           embedding: JSON.stringify(embedding),
           embedding_model: embedder.model,
+          entry_date: entry.created_at,
         };
       })
     );
