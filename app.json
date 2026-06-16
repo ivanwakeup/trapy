@@ -13,7 +13,13 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "deploymentTarget": "16.4",
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Allow trapy to transcribe your voice into journal entries.",
+        "NSMicrophoneUsageDescription": "Allow trapy to use your microphone for voice journaling."
+      },
+      "bundleIdentifier": "com.anonymous.trapy"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,13 +27,23 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow trapy to use your microphone for voice journaling.",
+          "speechRecognitionPermission": "Allow trapy to transcribe your voice into journal entries."
+        }
+      ]
     ]
   }
 }
