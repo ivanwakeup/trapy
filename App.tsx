@@ -7,6 +7,7 @@ import {
   StyleSheet,
   SafeAreaView,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
@@ -278,12 +279,22 @@ export default function App() {
   return (
     <AuthProvider>
       <StatusBar style="light" />
-      <AppGate />
+      <View style={styles.webOuter}>
+        <AppGate />
+      </View>
     </AuthProvider>
   );
 }
 
 const styles = StyleSheet.create({
+  webOuter: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    ...Platform.select({
+      web: { alignItems: "center" as const },
+      default: {},
+    }),
+  },
   loading: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -293,6 +304,11 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: Colors.background,
+    width: "100%",
+    ...Platform.select({
+      web: { maxWidth: 720, overflow: "hidden" as const },
+      default: {},
+    }),
   },
   header: {
     flexDirection: "row",

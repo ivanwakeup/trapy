@@ -7,10 +7,22 @@ import Card from "./Card";
 
 interface Props {
   onContinue: (level: number) => void;
+  isToday?: boolean;
 }
 
-export default function CheckInCard({ onContinue }: Props) {
+export default function CheckInCard({ onContinue, isToday = true }: Props) {
   const [activation, setActivation] = useState(5);
+
+  if (!isToday) {
+    return (
+      <Card>
+        <View style={styles.header}>
+          <Text style={styles.label}>Check-in</Text>
+          <Text style={styles.subtext}>No check-in recorded for this day.</Text>
+        </View>
+      </Card>
+    );
+  }
 
   return (
     <Card>
