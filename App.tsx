@@ -65,11 +65,6 @@ function showHeader(current: AppScreen): boolean {
   );
 }
 
-function routeFromActivation(level: number): AppScreen {
-  if (level <= 4) return { screen: "reflect", activationLevel: level, showReframeAfter: false };
-  if (level <= 7) return { screen: "choice", activationLevel: level };
-  return { screen: "calmdown" };
-}
 
 function MainApp() {
   const { signOut } = useAuth();
@@ -104,7 +99,6 @@ function MainApp() {
       case "home":
         return (
           <HomeScreen
-            onContinue={(level) => setCurrent(routeFromActivation(level))}
             onGoToAnalytics={() => setCurrent({ screen: "analytics" })}
             onGoToJournal={() => setCurrent({ screen: "journal" })}
             onGoToNewJournal={() => setCurrent({ screen: "journal-editor" })}

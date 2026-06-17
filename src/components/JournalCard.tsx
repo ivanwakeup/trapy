@@ -46,8 +46,15 @@ export default function JournalCard({ onPress, onNewEntry }: Props) {
             {loading ? "Loading..." : preview ? `Last entry: ${preview.date}` : "No entries yet."}
           </Text>
         </View>
-        <Pressable onPress={onNewEntry} hitSlop={12}>
-          <Text style={styles.newEntry}>New entry</Text>
+        <Pressable
+          onPress={onNewEntry}
+          style={({ pressed, hovered }: any) => [
+            styles.newEntryButton,
+            hovered && styles.newEntryButtonHovered,
+            pressed && styles.newEntryButtonPressed,
+          ]}
+        >
+          <Text style={styles.newEntryText}>New entry</Text>
         </Pressable>
       </View>
 
@@ -90,11 +97,25 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.sans,
     color: Colors.textMuted,
   },
-  newEntry: {
+  newEntryButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: Colors.accentSubtle,
+    borderWidth: 1,
+    borderColor: Colors.accentBorder,
+    marginTop: 2,
+  },
+  newEntryButtonHovered: {
+    backgroundColor: Colors.accentHover,
+  },
+  newEntryButtonPressed: {
+    backgroundColor: Colors.accentSubtle,
+  },
+  newEntryText: {
     fontSize: 13,
     fontFamily: Fonts.sansMedium,
-    color: Colors.primary,
-    marginTop: 2,
+    color: Colors.accent,
   },
   divider: {
     height: 1,

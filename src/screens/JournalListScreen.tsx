@@ -62,8 +62,15 @@ export default function JournalListScreen({ focused, onNewEntry, onEditEntry }: 
     >
       <View style={styles.headingBlock}>
         <Text style={styles.title}>Journal</Text>
-        <Pressable onPress={onNewEntry}>
-          <Text style={styles.newLink}>New entry</Text>
+        <Pressable
+          onPress={onNewEntry}
+          style={({ pressed, hovered }: any) => [
+            styles.newButton,
+            hovered && styles.newButtonHovered,
+            pressed && styles.newButtonPressed,
+          ]}
+        >
+          <Text style={styles.newButtonText}>New entry</Text>
         </Pressable>
       </View>
 
@@ -120,10 +127,24 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     letterSpacing: 0.3,
   },
-  newLink: {
+  newButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: Colors.accentSubtle,
+    borderWidth: 1,
+    borderColor: Colors.accentBorder,
+  },
+  newButtonHovered: {
+    backgroundColor: Colors.accentHover,
+  },
+  newButtonPressed: {
+    backgroundColor: Colors.accentSubtle,
+  },
+  newButtonText: {
     fontSize: 15,
     fontFamily: Fonts.sans,
-    color: Colors.primaryDark,
+    color: Colors.accent,
   },
   empty: {
     flex: 1,

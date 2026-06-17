@@ -226,8 +226,15 @@ export default function AIScreen({ onOpenDrawer }: Props) {
           <View style={styles.bar} />
         </Pressable>
         <Text style={styles.topBarTitle}>AI</Text>
-        <Pressable onPress={handleNewConversation} hitSlop={12}>
-          <Text style={styles.newConvLink}>New conversation</Text>
+        <Pressable
+          onPress={handleNewConversation}
+          style={({ pressed, hovered }: any) => [
+            styles.newConvButton,
+            hovered && styles.newConvButtonHovered,
+            pressed && styles.newConvButtonPressed,
+          ]}
+        >
+          <Text style={styles.newConvText}>New conversation</Text>
         </Pressable>
       </View>
 
@@ -340,10 +347,24 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     letterSpacing: 0.3,
   },
-  newConvLink: {
+  newConvButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: Colors.accentSubtle,
+    borderWidth: 1,
+    borderColor: Colors.accentBorder,
+  },
+  newConvButtonHovered: {
+    backgroundColor: Colors.accentHover,
+  },
+  newConvButtonPressed: {
+    backgroundColor: Colors.accentSubtle,
+  },
+  newConvText: {
     fontSize: 14,
     fontFamily: Fonts.sans,
-    color: Colors.primaryDark,
+    color: Colors.accent,
   },
   personaRow: {
     flexDirection: "row",

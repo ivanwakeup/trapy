@@ -11,6 +11,10 @@ export const Colors = {
   textMuted: "#567872",
   border: "#2D3D39",
   divider: "#1F2B28",
+  accent: "#C9A86A",
+  accentSubtle: "rgba(201, 168, 106, 0.08)",
+  accentBorder: "rgba(201, 168, 106, 0.22)",
+  accentHover: "rgba(201, 168, 106, 0.14)",
 };
 
 export const Fonts = {

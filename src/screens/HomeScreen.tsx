@@ -40,14 +40,13 @@ function isFutureDate(date: Date): boolean {
 }
 
 interface Props {
-  onContinue: (level: number) => void;
   onGoToAnalytics: () => void;
   onGoToJournal: () => void;
   onGoToNewJournal: () => void;
   onGoToAI: () => void;
 }
 
-export default function HomeScreen({ onContinue, onGoToAnalytics, onGoToJournal, onGoToNewJournal, onGoToAI }: Props) {
+export default function HomeScreen({ onGoToAnalytics, onGoToJournal, onGoToNewJournal, onGoToAI }: Props) {
   const [index, setIndex] = useState(TODAY_INDEX);
   const dates = useMemo(() => buildDates(), []);
   const date = dates[index];
@@ -107,7 +106,7 @@ export default function HomeScreen({ onContinue, onGoToAnalytics, onGoToJournal,
         )}
       </View>
 
-      <CheckInCard onContinue={onContinue} isToday={isToday} />
+      <CheckInCard isToday={isToday} />
       {!future && <InsightCard onPress={onGoToAnalytics} />}
       {!future && <JournalCard onPress={onGoToJournal} onNewEntry={onGoToNewJournal} />}
       <AICard onPress={onGoToAI} />
