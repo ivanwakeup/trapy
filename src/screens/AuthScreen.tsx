@@ -9,6 +9,7 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
+import * as AppleAuthentication from "expo-apple-authentication";
 import { supabase } from "../lib/supabase";
 import { Colors, Fonts } from "../theme";
 
@@ -21,6 +22,30 @@ export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
+
+  async function handleAppleSignIn() {
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      setLoading(true);
+      setError(null);
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: "apple",
+        token: credential.identityToken!,
+      });
+      if (error) setError(error.message);
+    } catch (e: any) {
+      if (e.code !== "ERR_REQUEST_CANCELED") {
+        setError("Apple sign in failed. Try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleSendCode() {
     if (!email.trim()) return;
@@ -100,6 +125,24 @@ export default function AuthScreen() {
     >
       <View style={styles.container}>
         <Text style={styles.wordmark}>trapy</Text>
+
+        {step === "email" && (
+          <AppleAuthentication.AppleAuthenticationButton
+            buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+            cornerRadius={16}
+            style={styles.appleButton}
+            onPress={handleAppleSignIn}
+          />
+        )}
+
+        {step === "email" && (
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+        )}
 
         {step === "email" && (
           <>
@@ -191,6 +234,27 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     marginBottom: 36,
     letterSpacing: 0.5,
+  },
+  appleButton: {
+    width: "100%",
+    height: 56,
+    marginBottom: 16,
+  },
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  dividerText: {
+    fontSize: 13,
+    fontFamily: Fonts.sans,
+    color: Colors.textMuted,
   },
   prompt: {
     fontSize: 17,

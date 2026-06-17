@@ -7,6 +7,7 @@ interface RequestPayload {
   conversation_id: string | null;
   message: string;
   user_id: string;
+  persona?: string;
 }
 
 const corsHeaders = {
@@ -21,7 +22,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { conversation_id, message, user_id }: RequestPayload = await req.json();
+    const { conversation_id, message, user_id, persona: personaName }: RequestPayload = await req.json();
 
     if (!message?.trim()) {
       return new Response(JSON.stringify({ error: "Empty message" }), { status: 400 });
@@ -48,11 +49,37 @@ Deno.serve(async (req) => {
     const embedder = new GoogleEmbeddingProvider();
     const queryEmbedding = await embedder.embed(message);
 
-    const { data: chunks } = await supabase.rpc("match_journal_chunks", {
-      query_embedding: queryEmbedding,
-      user_id_filter: user_id,
-      match_count: 5,
-    });
+    // Extract keywords: proper nouns + words longer than 4 chars, skip stop words
+    const stopWords = new Set(["about", "their", "there", "think", "would", "could", "should", "these", "those", "which", "where", "while", "after", "before", "since"]);
+    const keywords = message
+      .replace(/[^\w\s]/g, "")
+      .split(/\s+/)
+      .filter((w) => w.length > 3 && !stopWords.has(w.toLowerCase()));
+
+    const orFilter = keywords.map((w) => `text.ilike.%${w}%`).join(",");
+
+    const [vectorResult, keywordResult] = await Promise.all([
+      supabase.rpc("match_journal_chunks", {
+        query_embedding: queryEmbedding,
+        user_id_filter: user_id,
+        match_count: 4,
+      }),
+      orFilter
+        ? supabase
+            .from("journal_chunks")
+            .select("id, text, emotional_tone, arc_position, entry_date")
+            .eq("user_id", user_id)
+            .or(orFilter)
+            .limit(3)
+        : Promise.resolve({ data: [] }),
+    ]);
+
+    const vectorChunks = vectorResult.data ?? [];
+    const vectorIds = new Set(vectorChunks.map((c: { id: string }) => c.id));
+    const keywordChunks = (keywordResult.data ?? []).filter(
+      (c: { id: string }) => !vectorIds.has(c.id)
+    );
+    const chunks = [...vectorChunks, ...keywordChunks];
 
     // Load recent conversation history
     const { data: history } = await supabase
@@ -68,7 +95,7 @@ Deno.serve(async (req) => {
     ];
 
     // Build prompt and call AI
-    const persona = getPersona();
+    const persona = getPersona(personaName);
     const systemPrompt = persona.buildSystemPrompt(chunks ?? []);
     const ai = getAIProvider();
     const response = await ai.chat(messages, systemPrompt);

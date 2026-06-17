@@ -85,9 +85,9 @@ const personas: Record<string, Persona> = {
   socratic,
 };
 
-export function getPersona(): Persona {
-  const name = Deno.env.get("AI_PERSONA") ?? "compassionate";
-  const persona = personas[name];
-  if (!persona) throw new Error(`Unknown AI_PERSONA: ${name}. Available: ${Object.keys(personas).join(", ")}`);
+export function getPersona(name?: string): Persona {
+  const resolved = name ?? Deno.env.get("AI_PERSONA") ?? "compassionate";
+  const persona = personas[resolved];
+  if (!persona) throw new Error(`Unknown persona: ${resolved}. Available: ${Object.keys(personas).join(", ")}`);
   return persona;
 }

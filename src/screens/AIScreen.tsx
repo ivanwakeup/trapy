@@ -11,10 +11,21 @@ import {
   ActivityIndicator,
   Animated,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/AuthContext";
 import { AIMessage } from "../types";
 import { Colors, Fonts } from "../theme";
+
+type Persona = "compassionate" | "direct" | "socratic";
+
+const PERSONAS: { key: Persona; label: string; description: string }[] = [
+  { key: "compassionate", label: "Compassionate", description: "Warm, validates first, explores gently" },
+  { key: "direct", label: "Direct", description: "Names patterns clearly, no over-validation" },
+  { key: "socratic", label: "Socratic", description: "Mostly questions, guides you to insight" },
+];
+
+const PERSONA_STORAGE_KEY = "ai_persona";
 
 const FUNCTION_URL = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/chat-with-ai`;
 
@@ -85,11 +96,22 @@ export default function AIScreen({ onOpenDrawer }: Props) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
+  const [persona, setPersona] = useState<Persona>("compassionate");
   const listRef = useRef<FlatList>(null);
 
   useEffect(() => {
+    AsyncStorage.getItem(PERSONA_STORAGE_KEY).then((saved) => {
+      if (saved === "compassionate" || saved === "direct" || saved === "socratic") {
+        setPersona(saved);
+      }
+    });
     loadMostRecentConversation();
   }, []);
+
+  async function handlePersonaChange(next: Persona) {
+    setPersona(next);
+    await AsyncStorage.setItem(PERSONA_STORAGE_KEY, next);
+  }
 
   async function loadMostRecentConversation() {
     const { data: conv } = await supabase
@@ -151,6 +173,7 @@ export default function AIScreen({ onOpenDrawer }: Props) {
           conversation_id: conversationId,
           message: text,
           user_id: user!.id,
+          persona,
         }),
       });
 
@@ -206,6 +229,20 @@ export default function AIScreen({ onOpenDrawer }: Props) {
         <Pressable onPress={handleNewConversation} hitSlop={12}>
           <Text style={styles.newConvLink}>New conversation</Text>
         </Pressable>
+      </View>
+
+      <View style={styles.personaRow}>
+        {PERSONAS.map((p) => (
+          <Pressable
+            key={p.key}
+            style={[styles.personaPill, persona === p.key && styles.personaPillActive]}
+            onPress={() => handlePersonaChange(p.key)}
+          >
+            <Text style={[styles.personaPillText, persona === p.key && styles.personaPillTextActive]}>
+              {p.label}
+            </Text>
+          </Pressable>
+        ))}
       </View>
 
       {messages.length === 0 ? (
@@ -307,6 +344,36 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: Fonts.sans,
     color: Colors.primaryDark,
+  },
+  personaRow: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.divider,
+  },
+  personaPill: {
+    flex: 1,
+    paddingVertical: 7,
+    borderRadius: 20,
+    alignItems: "center",
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  personaPillActive: {
+    backgroundColor: Colors.primaryLight,
+    borderColor: Colors.primary,
+  },
+  personaPillText: {
+    fontSize: 12,
+    fontFamily: Fonts.sansMedium,
+    color: Colors.textMuted,
+    letterSpacing: 0.2,
+  },
+  personaPillTextActive: {
+    color: Colors.primary,
   },
   empty: {
     flex: 1,
