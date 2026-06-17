@@ -1,4 +1,5 @@
 import { GeminiAIProvider } from "./providers/gemini.ts";
+import { ClaudeAIProvider } from "./providers/claude.ts";
 
 export interface AIProvider {
   readonly model: string;
@@ -12,7 +13,7 @@ export function getAIProvider(): AIProvider {
   const provider = Deno.env.get("AI_PROVIDER") ?? "gemini";
   switch (provider) {
     case "gemini": return new GeminiAIProvider();
-    // case "claude": return new ClaudeAIProvider();
+    case "claude": return new ClaudeAIProvider();
     default: throw new Error(`Unknown AI_PROVIDER: ${provider}`);
   }
 }
