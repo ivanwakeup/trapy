@@ -81,13 +81,59 @@ Deno.serve(async (req) => {
     );
     const chunks = [...vectorChunks, ...keywordChunks];
 
-    // Load recent conversation history
-    const { data: history } = await supabase
-      .from("ai_messages")
-      .select("role, content")
-      .eq("conversation_id", convId)
-      .order("created_at", { ascending: true })
-      .limit(10);
+    // Look up entry_ids for retrieved chunks and fetch full entry bodies,
+    // in parallel with conversation history
+    const chunkIds = chunks.map((c: { id: string }) => c.id);
+
+    const [{ data: chunkMeta }, { data: history }] = await Promise.all([
+      chunkIds.length > 0
+        ? supabase.from("journal_chunks").select("id, entry_id").in("id", chunkIds)
+        : Promise.resolve({ data: [] }),
+      supabase
+        .from("ai_messages")
+        .select("role, content")
+        .eq("conversation_id", convId)
+        .order("created_at", { ascending: true })
+        .limit(10),
+    ]);
+
+    const entryIdByChunkId = new Map(
+      (chunkMeta ?? []).map((c: { id: string; entry_id: string }) => [c.id, c.entry_id])
+    );
+
+    const uniqueEntryIds = [
+      ...new Set(
+        chunks
+          .map((c: { id: string }) => entryIdByChunkId.get(c.id))
+          .filter(Boolean)
+      ),
+    ].slice(0, 3) as string[];
+
+    const { data: fullEntries } = uniqueEntryIds.length > 0
+      ? await supabase
+          .from("journal_entries")
+          .select("id, body")
+          .in("id", uniqueEntryIds)
+      : { data: [] };
+
+    const bodyByEntryId = new Map(
+      (fullEntries ?? []).map((e: { id: string; body: string }) => [e.id, e.body])
+    );
+
+    // Enrich chunks with full entry body, deduplicated by entry
+    const seenEntryIds = new Set<string>();
+    const enrichedChunks = chunks
+      .map((c: any) => {
+        const entryId = entryIdByChunkId.get(c.id);
+        return { ...c, full_body: entryId ? bodyByEntryId.get(entryId) : undefined };
+      })
+      .filter((c: any) => {
+        const entryId = entryIdByChunkId.get(c.id);
+        if (!entryId) return true;
+        if (seenEntryIds.has(entryId)) return false;
+        seenEntryIds.add(entryId);
+        return true;
+      });
 
     const messages = [
       ...(history ?? []),
@@ -96,12 +142,13 @@ Deno.serve(async (req) => {
 
     // Build prompt and call AI
     const persona = getPersona(personaName);
-    const systemPrompt = persona.buildSystemPrompt(chunks ?? []);
+    const systemPrompt = persona.buildSystemPrompt(enrichedChunks);
+    console.log(`[prompt] persona: ${persona.name}\n---\n${systemPrompt}\n---`);
     const ai = getAIProvider();
     const response = await ai.chat(messages, systemPrompt);
 
     // Save both messages
-    const chunkIds = (chunks ?? []).map((c: { id: string }) => c.id);
+    const retrievedChunkIds = chunks.map((c: { id: string }) => c.id);
     await supabase.from("ai_messages").insert([
       { conversation_id: convId, user_id, role: "user", content: message },
       {
@@ -109,7 +156,7 @@ Deno.serve(async (req) => {
         user_id,
         role: "assistant",
         content: response,
-        retrieved_chunk_ids: chunkIds,
+        retrieved_chunk_ids: retrievedChunkIds,
       },
     ]);
 

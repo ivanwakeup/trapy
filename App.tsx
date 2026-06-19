@@ -149,7 +149,12 @@ function MainApp() {
       case "calmdown":
         return <CalmDownScreen onDone={() => setCurrent({ screen: "home" })} />;
       case "analytics":
-        return <AnalyticsScreen focused />;
+        return (
+          <AnalyticsScreen
+            focused
+            onEditEntry={(entryId) => setCurrent({ screen: "journal-editor", entryId })}
+          />
+        );
       case "journal":
         return (
           <JournalListScreen
