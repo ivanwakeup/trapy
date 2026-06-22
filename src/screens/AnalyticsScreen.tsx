@@ -262,17 +262,17 @@ emptyTitle: {
   backdrop: {
     flex: 1,
     backgroundColor: "rgba(10, 18, 15, 0.75)",
-    justifyContent: "flex-end",
+    justifyContent: "center",
     alignItems: "center",
+    padding: 24,
     ...Platform.select({ web: { cursor: "default" } as any, default: {} }),
   },
   sheet: {
     backgroundColor: Colors.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderRadius: 24,
     width: "100%",
-    maxWidth: 720,
-    maxHeight: "80%",
+    maxWidth: 480,
+    maxHeight: "75%",
     ...Shadow.card,
   },
   sheetHeader: {
