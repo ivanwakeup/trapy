@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -26,16 +26,21 @@ import ReflectScreen from "./src/screens/ReflectScreen";
 import ReframeScreen from "./src/screens/ReframeScreen";
 import CalmDownScreen from "./src/screens/CalmDownScreen";
 import AnalyticsScreen from "./src/screens/AnalyticsScreen";
-import JournalListScreen from "./src/screens/JournalListScreen";
 import JournalEditorScreen from "./src/screens/JournalEditorScreen";
+import CheckInScreen from "./src/screens/CheckInScreen";
+import RelationshipsScreen from "./src/screens/RelationshipsScreen";
+import OnboardingScreen from "./src/screens/OnboardingScreen";
 import AIScreen from "./src/screens/AIScreen";
+import { supabase } from "./src/lib/supabase";
 import { CheckInEntry } from "./src/types";
 import { Colors, Fonts } from "./src/theme";
 
 type AppScreen =
   | { screen: "home" }
+  | { screen: "onboarding" }
   | { screen: "analytics" }
-  | { screen: "journal" }
+  | { screen: "checkin"; date: Date }
+  | { screen: "relationships" }
   | { screen: "journal-editor"; entryId?: string; checkinId?: string }
   | { screen: "ai" }
   | { screen: "choice"; activationLevel: number }
@@ -50,7 +55,6 @@ function headerTitle(current: AppScreen): string {
     case "home": return "trapy";
     case "analytics": return "Analytics";
     case "reflect": return "Reflect";
-    case "journal": return "Journal";
     default: return "";
   }
 }
@@ -59,16 +63,27 @@ function showHeader(current: AppScreen): boolean {
   return (
     current.screen === "home" ||
     current.screen === "analytics" ||
-    current.screen === "reflect" ||
-    current.screen === "journal"
-    // "ai" manages its own top bar
+    current.screen === "reflect"
+    // "ai", "checkin", "relationships", "onboarding" manage their own top bars
   );
 }
 
 
 function MainApp() {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const [current, setCurrent] = useState<AppScreen>({ screen: "home" });
+
+  // Check for relationships on first load — send new users to onboarding
+  useEffect(() => {
+    supabase
+      .from("relationships")
+      .select("id")
+      .eq("user_id", user!.id)
+      .limit(1)
+      .then(({ data }) => {
+        if (!data?.length) setCurrent({ screen: "onboarding" });
+      });
+  }, []);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
 
@@ -96,13 +111,17 @@ function MainApp() {
 
   function renderScreen() {
     switch (current.screen) {
+      case "onboarding":
+        return (
+          <OnboardingScreen onDone={() => setCurrent({ screen: "home" })} />
+        );
       case "home":
         return (
           <HomeScreen
             onGoToAnalytics={() => setCurrent({ screen: "analytics" })}
-            onGoToJournal={() => setCurrent({ screen: "journal" })}
-            onGoToNewJournal={() => setCurrent({ screen: "journal-editor" })}
             onGoToAI={() => setCurrent({ screen: "ai" })}
+            onNewCheckIn={(date) => setCurrent({ screen: "checkin", date })}
+            onManageRelationships={() => setCurrent({ screen: "relationships" })}
           />
         );
       case "choice":
@@ -148,18 +167,22 @@ function MainApp() {
         );
       case "calmdown":
         return <CalmDownScreen onDone={() => setCurrent({ screen: "home" })} />;
+      case "checkin":
+        return (
+          <CheckInScreen
+            date={current.date}
+            onSaved={() => setCurrent({ screen: "home" })}
+            onBack={() => setCurrent({ screen: "home" })}
+          />
+        );
+      case "relationships":
+        return (
+          <RelationshipsScreen onBack={() => setCurrent({ screen: "home" })} />
+        );
       case "analytics":
         return (
           <AnalyticsScreen
             focused
-            onEditEntry={(entryId) => setCurrent({ screen: "journal-editor", entryId })}
-          />
-        );
-      case "journal":
-        return (
-          <JournalListScreen
-            focused
-            onNewEntry={() => setCurrent({ screen: "journal-editor" })}
             onEditEntry={(entryId) => setCurrent({ screen: "journal-editor", entryId })}
           />
         );
@@ -168,8 +191,8 @@ function MainApp() {
           <JournalEditorScreen
             entryId={current.entryId}
             checkinId={current.checkinId}
-            onSaved={() => setCurrent({ screen: "journal" })}
-            onBack={() => setCurrent({ screen: "journal" })}
+            onSaved={() => setCurrent({ screen: "analytics" })}
+            onBack={() => setCurrent({ screen: "analytics" })}
           />
         );
       case "ai":
@@ -179,7 +202,7 @@ function MainApp() {
 
   const drawerItems: { label: string; target: AppScreen }[] = [
     { label: "Home", target: { screen: "home" } },
-    { label: "Journal", target: { screen: "journal" } },
+    { label: "My People", target: { screen: "relationships" } },
     { label: "AI", target: { screen: "ai" } },
     { label: "Analytics", target: { screen: "analytics" } },
   ];
@@ -187,10 +210,10 @@ function MainApp() {
   const activeDrawerItem =
     current.screen === "analytics"
       ? "Analytics"
-      : current.screen === "journal" || current.screen === "journal-editor"
-      ? "Journal"
       : current.screen === "ai"
       ? "AI"
+      : current.screen === "relationships"
+      ? "My People"
       : "Home";
 
   return (

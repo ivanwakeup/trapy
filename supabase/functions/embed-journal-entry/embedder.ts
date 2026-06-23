@@ -1,4 +1,4 @@
-import { GoogleEmbeddingProvider } from "./providers/google.ts";
+import { VoyageEmbeddingProvider } from "./providers/voyage.ts";
 
 export interface EmbeddingProvider {
   readonly model: string;
@@ -7,11 +7,9 @@ export interface EmbeddingProvider {
 }
 
 export function getEmbeddingProvider(): EmbeddingProvider {
-  const provider = Deno.env.get("EMBEDDING_PROVIDER") ?? "google";
+  const provider = Deno.env.get("EMBEDDING_PROVIDER") ?? "voyage";
   switch (provider) {
-    case "google": return new GoogleEmbeddingProvider();
-    // case "openai": return new OpenAIEmbeddingProvider();  — add when OPENAI_API_KEY is available
-    // case "voyage": return new VoyageEmbeddingProvider();  — add when VOYAGE_API_KEY is available
+    case "voyage": return new VoyageEmbeddingProvider();
     default: throw new Error(`Unknown EMBEDDING_PROVIDER: ${provider}`);
   }
 }

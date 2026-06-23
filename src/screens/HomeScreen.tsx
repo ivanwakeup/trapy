@@ -1,9 +1,7 @@
 import React, { useState, useMemo, useRef } from "react";
 import { View, Text, ScrollView, Pressable, PanResponder, StyleSheet, Platform } from "react-native";
-import { Colors, Fonts } from "../theme";
-import CheckInCard from "../components/CheckInCard";
+import { Colors, Fonts, Shadow } from "../theme";
 import InsightCard from "../components/InsightCard";
-import JournalCard from "../components/JournalCard";
 import AICard from "../components/AICard";
 
 const DAYS_PAST = 90;
@@ -41,25 +39,20 @@ function isFutureDate(date: Date): boolean {
 
 interface Props {
   onGoToAnalytics: () => void;
-  onGoToJournal: () => void;
-  onGoToNewJournal: () => void;
   onGoToAI: () => void;
+  onNewCheckIn: (date: Date) => void;
+  onManageRelationships: () => void;
 }
 
-export default function HomeScreen({ onGoToAnalytics, onGoToJournal, onGoToNewJournal, onGoToAI }: Props) {
+export default function HomeScreen({ onGoToAnalytics, onGoToAI, onNewCheckIn, onManageRelationships }: Props) {
   const [index, setIndex] = useState(TODAY_INDEX);
   const dates = useMemo(() => buildDates(), []);
   const date = dates[index];
   const isToday = index === TODAY_INDEX;
   const future = isFutureDate(date);
 
-  function goBack() {
-    setIndex((i) => Math.max(0, i - 1));
-  }
-
-  function goForward() {
-    setIndex((i) => Math.min(TOTAL_DAYS - 1, i + 1));
-  }
+  function goBack() { setIndex((i) => Math.max(0, i - 1)); }
+  function goForward() { setIndex((i) => Math.min(TOTAL_DAYS - 1, i + 1)); }
 
   const panResponder = useRef(
     PanResponder.create({
@@ -79,6 +72,7 @@ export default function HomeScreen({ onGoToAnalytics, onGoToJournal, onGoToNewJo
       showsVerticalScrollIndicator={false}
       {...(Platform.OS !== "web" ? panResponder.panHandlers : {})}
     >
+      {/* Date navigation heading */}
       <View style={styles.headingBlock}>
         <View style={styles.headingRow}>
           <Pressable onPress={goBack} disabled={index === 0} hitSlop={12}>
@@ -106,9 +100,39 @@ export default function HomeScreen({ onGoToAnalytics, onGoToJournal, onGoToNewJo
         )}
       </View>
 
-      <CheckInCard isToday={isToday} />
+      {/* Check-in button */}
+      {!future && (
+        <View style={styles.checkInSection}>
+          <Pressable
+            onPress={() => onNewCheckIn(date)}
+            style={({ pressed, hovered }: any) => [
+              styles.checkInButton,
+              hovered && styles.checkInButtonHovered,
+              pressed && styles.checkInButtonPressed,
+            ]}
+          >
+            <Text style={styles.checkInPlus}>+</Text>
+          </Pressable>
+          <Text style={styles.checkInLabel}>
+            {isToday ? "Log today" : "Log this day"}
+          </Text>
+        </View>
+      )}
+
+      {/* Relationships row */}
+      <Pressable
+        onPress={onManageRelationships}
+        style={({ pressed, hovered }: any) => [
+          styles.relationshipsRow,
+          hovered && styles.relationshipsRowHovered,
+          pressed && styles.relationshipsRowPressed,
+        ]}
+      >
+        <Text style={styles.relationshipsLabel}>People</Text>
+        <Text style={styles.relationshipsArrow}>→</Text>
+      </Pressable>
+
       {!future && <InsightCard onPress={onGoToAnalytics} />}
-      {!future && <JournalCard onPress={onGoToJournal} onNewEntry={onGoToNewJournal} />}
       <AICard onPress={onGoToAI} />
     </ScrollView>
   );
@@ -167,5 +191,67 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: Fonts.sans,
     color: Colors.primaryDark,
+  },
+  checkInSection: {
+    alignItems: "center",
+    paddingVertical: 12,
+    gap: 10,
+  },
+  checkInButton: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: Colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    ...Shadow.card,
+  },
+  checkInButtonHovered: {
+    backgroundColor: Colors.primaryDark,
+  },
+  checkInButtonPressed: {
+    backgroundColor: Colors.primaryDark,
+    transform: [{ scale: 0.95 }],
+  },
+  checkInPlus: {
+    fontSize: 36,
+    color: Colors.background,
+    lineHeight: 40,
+    fontFamily: Fonts.sansLight,
+    marginTop: -2,
+  },
+  checkInLabel: {
+    fontSize: 13,
+    fontFamily: Fonts.sansLight,
+    color: Colors.textMuted,
+    letterSpacing: 0.2,
+  },
+  relationshipsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.accentBorder,
+  },
+  relationshipsRowHovered: {
+    backgroundColor: Colors.accentSubtle,
+  },
+  relationshipsRowPressed: {
+    backgroundColor: Colors.accentSubtle,
+    opacity: 0.8,
+  },
+  relationshipsLabel: {
+    fontSize: 15,
+    fontFamily: Fonts.sansMedium,
+    color: Colors.accent,
+  },
+  relationshipsArrow: {
+    fontSize: 15,
+    color: Colors.accent,
+    fontFamily: Fonts.sans,
   },
 });

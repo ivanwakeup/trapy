@@ -59,6 +59,7 @@ Deno.serve(async (req) => {
           emotional_tone: chunk.emotional_tone,
           themes: chunk.themes,
           arc_position: chunk.arc_position,
+          people: chunk.people ?? [],
           embedding: JSON.stringify(embedding),
           embedding_model: embedder.model,
           entry_date: entry.created_at,
@@ -69,7 +70,16 @@ Deno.serve(async (req) => {
     const { error } = await supabase.from("journal_chunks").insert(rows);
     if (error) throw error;
 
-    console.log(`Embedded ${rows.length} chunks for entry ${entry.id}`);
+    // Aggregate all people mentioned across chunks onto the entry
+    const allPeople = [...new Set(chunks.flatMap((c) => c.people ?? []))];
+    if (allPeople.length > 0) {
+      await supabase
+        .from("journal_entries")
+        .update({ people: allPeople })
+        .eq("id", entry.id);
+    }
+
+    console.log(`Embedded ${rows.length} chunks for entry ${entry.id} — people: ${allPeople.join(", ") || "none"}`);
     return new Response(JSON.stringify({ chunks: rows.length }), {
       status: 200,
       headers: { "Content-Type": "application/json" },

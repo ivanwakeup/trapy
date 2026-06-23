@@ -1,30 +1,12 @@
 import { Chunk, CheckInContext, ChunkingProvider } from "../chunker.ts";
 
-export class GeminiChunkingProvider implements ChunkingProvider {
-  readonly model = "gemini-2.5-flash-lite";
+export class ClaudeChunkingProvider implements ChunkingProvider {
+  readonly model = "claude-haiku-4-5-20251001";
   private apiKey: string;
 
   constructor() {
-    this.apiKey = Deno.env.get("GOOGLE_AI_API_KEY") ?? "";
-    if (!this.apiKey) throw new Error("GOOGLE_AI_API_KEY is not set");
-  }
-
-  private async callWithRetry(url: string, init: RequestInit, attempt = 1): Promise<Response> {
-    const res = await fetch(url, init);
-    if (res.status === 429 && attempt < 4) {
-      const body = await res.clone().text();
-      // Daily quota exhausted — no point retrying, will fail until midnight Pacific
-      if (body.includes("quota") || body.includes("RESOURCE_EXHAUSTED")) {
-        console.error("Gemini daily quota exhausted. Resets at midnight Pacific.");
-        return res;
-      }
-      // Per-minute throttle — back off and retry
-      const delay = Math.pow(2, attempt) * 3000; // 6s, 12s, 24s
-      console.warn(`Gemini RPM throttle — retrying in ${delay / 1000}s (attempt ${attempt}/3)`);
-      await new Promise((r) => setTimeout(r, delay));
-      return this.callWithRetry(url, init, attempt + 1);
-    }
-    return res;
+    this.apiKey = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
+    if (!this.apiKey) throw new Error("ANTHROPIC_API_KEY is not set");
   }
 
   async chunk(body: string, checkin?: CheckInContext): Promise<Chunk[]> {
@@ -61,27 +43,29 @@ Rules:
 - If the entry is under 3 sentences, return it as a single chunk
 - Return only the JSON array, no other text`;
 
-    const response = await this.callWithRetry(
-      `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: "application/json" },
-        }),
-      }
-    );
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": this.apiKey,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: this.model,
+        max_tokens: 4096,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
 
     if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.status} ${await response.text()}`);
+      throw new Error(`Claude API error: ${response.status} ${await response.text()}`);
     }
 
     const data = await response.json();
-    const content = data.candidates[0].content.parts[0].text.trim();
+    const content = data.content[0].text.trim();
 
     const jsonMatch = content.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) throw new Error("Gemini did not return a JSON array");
+    if (!jsonMatch) throw new Error("Claude did not return a JSON array");
 
     return JSON.parse(jsonMatch[0]) as Chunk[];
   }

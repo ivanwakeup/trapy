@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getAIProvider } from "./ai.ts";
 import { getPersona } from "./persona.ts";
-import { GoogleEmbeddingProvider } from "./providers/google-embedding.ts";
+import { VoyageEmbeddingProvider } from "./providers/voyage-embedding.ts";
 
 interface RequestPayload {
   conversation_id: string | null;
@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
     }
 
     // Embed user message and retrieve relevant journal chunks
-    const embedder = new GoogleEmbeddingProvider();
+    const embedder = new VoyageEmbeddingProvider();
     const queryEmbedding = await embedder.embed(message);
 
     // Extract keywords: proper nouns + words longer than 4 chars, skip stop words
