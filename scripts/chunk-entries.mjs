@@ -115,12 +115,20 @@ async function main() {
   let toProcess = entries.filter((e) => e.body?.trim());
 
   if (!FORCE) {
-    const { data: existingChunks } = await supabase
-      .from("journal_chunks")
-      .select("entry_id")
-      .eq("user_id", USER_ID);
-
-    const chunkedIds = new Set((existingChunks ?? []).map((c) => c.entry_id));
+    const chunkedIds = new Set();
+    const PAGE = 1000;
+    let from = 0;
+    while (true) {
+      const { data: page, error } = await supabase
+        .from("journal_chunks")
+        .select("entry_id")
+        .eq("user_id", USER_ID)
+        .range(from, from + PAGE - 1);
+      if (error) throw error;
+      for (const row of page ?? []) chunkedIds.add(row.entry_id);
+      if (!page || page.length < PAGE) break;
+      from += PAGE;
+    }
     toProcess = toProcess.filter((e) => !chunkedIds.has(e.id));
   }
 

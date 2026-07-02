@@ -29,6 +29,7 @@ interface Props {
 export default function JournalEditorScreen({ entryId, checkinId, onSaved, onBack }: Props) {
   const { user } = useAuth();
   const [body, setBody] = useState("");
+  const [entryDate, setEntryDate] = useState<Date>(new Date());
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!!entryId);
   const [listening, setListening] = useState(false);
@@ -94,11 +95,14 @@ export default function JournalEditorScreen({ entryId, checkinId, onSaved, onBac
     if (!entryId) return;
     supabase
       .from("journal_entries")
-      .select("body")
+      .select("body, created_at")
       .eq("id", entryId)
       .single()
       .then(({ data }) => {
-        if (data) setBody(data.body);
+        if (data) {
+          setBody(data.body);
+          setEntryDate(new Date(data.created_at));
+        }
         setLoading(false);
       });
   }, [entryId]);
@@ -136,10 +140,11 @@ export default function JournalEditorScreen({ entryId, checkinId, onSaved, onBac
     onSaved();
   }
 
-  const dateLabel = new Date().toLocaleDateString("en-US", {
+  const dateLabel = entryDate.toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
+    year: "numeric",
   });
 
   if (loading) {

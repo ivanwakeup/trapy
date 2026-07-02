@@ -13,8 +13,16 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/AuthContext";
 import { Colors, Fonts, Shadow } from "../theme";
 import ThemeCloud, { ThemeItem, MAX_THEME_BUBBLES } from "../components/ThemeCloud";
+import ToneHeatmap from "../components/ToneHeatmap";
+import ToneRiver from "../components/ToneRiver";
 
 type ThemeCount = ThemeItem;
+
+interface ChunkRow {
+  emotional_tone: string | null;
+  entry_date: string | null;
+  entry_id: string | null;
+}
 
 interface EntryPreview {
   id: string;
@@ -30,6 +38,7 @@ interface Props {
 export default function AnalyticsScreen({ focused, onEditEntry }: Props) {
   const { user } = useAuth();
   const [themes, setThemes] = useState<ThemeCount[]>([]);
+  const [chunkRows, setChunkRows] = useState<ChunkRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
@@ -40,7 +49,7 @@ export default function AnalyticsScreen({ focused, onEditEntry }: Props) {
     setLoading(true);
     const { data } = await supabase
       .from("journal_chunks")
-      .select("themes")
+      .select("themes, emotional_tone, entry_date, entry_id")
       .eq("user_id", user!.id);
 
     const counts: Record<string, number> = {};
@@ -60,6 +69,7 @@ export default function AnalyticsScreen({ focused, onEditEntry }: Props) {
       }));
 
     setThemes(sorted);
+    setChunkRows((data ?? []).filter((r) => r.emotional_tone && r.entry_date));
     setLoading(false);
   }, [user]);
 
@@ -137,6 +147,22 @@ export default function AnalyticsScreen({ focused, onEditEntry }: Props) {
           themes={themes}
           onBubblePress={handleBubblePress}
         />
+
+        {chunkRows.length > 0 && (
+          <>
+            <View style={styles.sectionHeading}>
+              <Text style={styles.sectionTitle}>Daily mood</Text>
+              <Text style={styles.sectionSubtitle}>Dominant emotional tone per day</Text>
+            </View>
+            <ToneHeatmap chunks={chunkRows} onOpenEntry={onEditEntry} />
+
+            <View style={styles.sectionHeading}>
+              <Text style={styles.sectionTitle}>Tone over time</Text>
+              <Text style={styles.sectionSubtitle}>Emotional mix by week</Text>
+            </View>
+            <ToneRiver chunks={chunkRows} />
+          </>
+        )}
       </ScrollView>
 
       <Modal
@@ -243,7 +269,24 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     marginTop: 4,
   },
-emptyTitle: {
+  sectionHeading: {
+    paddingHorizontal: 4,
+    marginTop: 36,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontFamily: Fonts.serif,
+    color: Colors.textPrimary,
+    letterSpacing: 0.2,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    fontFamily: Fonts.sansLight,
+    color: Colors.textMuted,
+    marginTop: 3,
+  },
+  emptyTitle: {
     fontSize: 22,
     fontFamily: Fonts.serif,
     color: Colors.textPrimary,
