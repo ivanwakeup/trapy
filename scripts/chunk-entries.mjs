@@ -15,9 +15,15 @@ import { createClient } from "@supabase/supabase-js";
 import { config } from "dotenv";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+import { readFileSync } from "fs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 config({ path: resolve(__dirname, "../.env") });
+
+const PROMPT_TEMPLATE = readFileSync(
+  resolve(__dirname, "../supabase/functions/embed-journal-entry/prompts/chunking.txt"),
+  "utf-8"
+);
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -40,7 +46,7 @@ function sleep(ms) {
 }
 
 async function chunkEntry(body, checkin) {
-  const checkinBlock = checkin
+  const checkinContext = checkin
     ? `Context from their check-in before writing:
 - Activation level: ${checkin.activation_level}/10
 - Triggers they identified: ${checkin.triggers?.join(", ") || "none"}
@@ -50,28 +56,9 @@ async function chunkEntry(body, checkin) {
 `
     : "";
 
-  const prompt = `You are analyzing a personal journal entry written by someone working on anxious attachment patterns.
-
-Segment this entry into emotionally coherent chunks. Each chunk is a distinct beat — a moment where the emotional state, perspective, or self-awareness meaningfully shifts.
-
-${checkinBlock}Journal entry:
-${body}
-
-Return a JSON array only. Each element:
-{
-  "text": "<exact text — do not paraphrase>",
-  "emotional_tone": "<single word: e.g. anxious, settled, avoidant, curious, overwhelmed>",
-  "themes": ["<1-3 themes: e.g. abandonment fear, waiting, physical sensation, reassurance seeking>"],
-  "arc_position": "<onset | escalation | peak | de-escalation | resolution | reflection>",
-  "people": ["<name or role of each person mentioned in this chunk: e.g. Mary, mom, my therapist, John — use the exact name/term as written>"]
-}
-
-Rules:
-- Each chunk: 1-5 sentences
-- Start a new chunk when emotional tone or perspective meaningfully shifts
-- Preserve exact text — never summarize or rephrase
-- If the entry is under 3 sentences, return it as a single chunk
-- Return only the JSON array, no other text`;
+  const prompt = PROMPT_TEMPLATE
+    .replace("{{CHECKIN_CONTEXT}}", checkinContext)
+    .replace("{{BODY}}", body);
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -176,6 +163,7 @@ async function main() {
           themes: chunk.themes,
           arc_position: chunk.arc_position,
           people: chunk.people ?? [],
+          cognitive_distortions: chunk.cognitive_distortions ?? [],
           embedding: null,
           embedding_model: null,
           entry_date: entry.created_at,

@@ -1,0 +1,39 @@
+You are analyzing a personal journal entry written by someone working on anxious attachment patterns.
+
+Segment this entry into emotionally coherent chunks. Each chunk is a distinct beat — a moment where the emotional state, perspective, or self-awareness meaningfully shifts.
+
+{{CHECKIN_CONTEXT}}Journal entry:
+{{BODY}}
+
+Return a JSON array only. Each element:
+{
+  "text": "<exact text — do not paraphrase>",
+  "emotional_tone": "<single word: e.g. anxious, settled, avoidant, curious, overwhelmed>",
+  "themes": ["<1-3 themes: e.g. abandonment fear, waiting, physical sensation, reassurance seeking>"],
+  "arc_position": "<onset | escalation | peak | de-escalation | resolution | reflection>",
+  "people": ["<name or role of each person mentioned in this chunk: e.g. Mary, mom, my therapist, John — use the exact name/term as written>"],
+  "cognitive_distortions": ["<identify any cognitive distortions present — use only labels from the list below, return empty array if none>"]
+}
+
+Cognitive distortion labels (use exact strings):
+- catastrophizing
+- mind reading
+- fortune telling
+- black-and-white thinking
+- emotional reasoning
+- personalization
+- overgeneralization
+- filtering
+- disqualifying the positive
+- should statements
+- labeling
+- jumping to conclusions
+- magnification
+- minimization
+
+Rules:
+- Each chunk: 1-5 sentences
+- Start a new chunk when emotional tone or perspective meaningfully shifts
+- Preserve exact text — never summarize or rephrase
+- If the entry is under 3 sentences, return it as a single chunk
+- Return only the JSON array, no other text

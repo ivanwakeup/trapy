@@ -60,6 +60,7 @@ Deno.serve(async (req) => {
           themes: chunk.themes,
           arc_position: chunk.arc_position,
           people: chunk.people ?? [],
+          cognitive_distortions: chunk.cognitive_distortions ?? [],
           embedding: JSON.stringify(embedding),
           embedding_model: embedder.model,
           entry_date: entry.created_at,
