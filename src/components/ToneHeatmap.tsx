@@ -90,16 +90,20 @@ function buildGrid(chunks: ChunkRow[], numWeeks: number): CellData[][] {
 }
 
 function buildLegend(chunks: ChunkRow[]) {
-  const seen: Record<string, number> = {};
+  // Group by resolved label so synonyms (e.g. "curious" + "questioning" → "Curious") don't appear twice
+  const byLabel: Record<string, { count: number; tone: string; color: string; label: string }> = {};
   for (const c of chunks) {
     if (!c.emotional_tone) continue;
     const t = c.emotional_tone.toLowerCase().trim();
-    seen[t] = (seen[t] ?? 0) + 1;
+    const label = toneToLabel(t);
+    if (!byLabel[label]) {
+      byLabel[label] = { count: 0, tone: t, color: toneToColor(t), label };
+    }
+    byLabel[label].count++;
   }
-  return Object.entries(seen)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 6)
-    .map(([tone]) => ({ tone, color: toneToColor(tone), label: toneToLabel(tone) }));
+  return Object.values(byLabel)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6);
 }
 
 function HeatCell({
@@ -118,7 +122,7 @@ function HeatCell({
   }
 
   const color = toneToColor(cell.tone);
-  const isSelected = selectedTone === null || cell.tone === selectedTone;
+  const isSelected = selectedTone === null || toneToLabel(cell.tone) === toneToLabel(selectedTone);
 
   return (
     <Pressable

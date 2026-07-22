@@ -15,6 +15,8 @@ import { Colors, Fonts, Shadow } from "../theme";
 import ThemeCloud, { ThemeItem, MAX_THEME_BUBBLES } from "../components/ThemeCloud";
 import ToneHeatmap from "../components/ToneHeatmap";
 import ToneRiver from "../components/ToneRiver";
+import DistortionBreakdown from "../components/DistortionBreakdown";
+import WellbeingTrend from "../components/WellbeingTrend";
 
 type ThemeCount = ThemeItem;
 
@@ -22,6 +24,8 @@ interface ChunkRow {
   emotional_tone: string | null;
   entry_date: string | null;
   entry_id: string | null;
+  themes: string[] | null;
+  cognitive_distortions: string[] | null;
 }
 
 interface EntryPreview {
@@ -47,10 +51,21 @@ export default function AnalyticsScreen({ focused, onEditEntry }: Props) {
 
   const loadThemes = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("journal_chunks")
-      .select("themes, emotional_tone, entry_date, entry_id")
-      .eq("user_id", user!.id);
+    const allRows: ChunkRow[] = [];
+    const PAGE = 1000;
+    let from = 0;
+    while (true) {
+      const { data: page, error } = await supabase
+        .from("journal_chunks")
+        .select("themes, emotional_tone, entry_date, entry_id, cognitive_distortions")
+        .eq("user_id", user!.id)
+        .range(from, from + PAGE - 1);
+      if (error) break;
+      for (const row of page ?? []) allRows.push(row as ChunkRow);
+      if (!page || page.length < PAGE) break;
+      from += PAGE;
+    }
+    const data = allRows;
 
     const counts: Record<string, number> = {};
     for (const row of data ?? []) {
@@ -140,9 +155,22 @@ export default function AnalyticsScreen({ focused, onEditEntry }: Props) {
       >
         <View style={styles.headingBlock}>
           <Text style={styles.title}>Your patterns</Text>
-          <Text style={styles.subtitle}>Themes from your journal</Text>
         </View>
 
+        {chunkRows.length > 0 && (
+          <>
+            <View style={styles.sectionHeading}>
+              <Text style={styles.sectionTitle}>Wellbeing over time</Text>
+              <Text style={styles.sectionSubtitle}>Regulated vs. distressed tone, 4-week rolling average</Text>
+            </View>
+            <WellbeingTrend chunks={chunkRows} />
+          </>
+        )}
+
+        <View style={[styles.sectionHeading, { marginTop: chunkRows.length > 0 ? 36 : 0 }]}>
+          <Text style={styles.sectionTitle}>Themes</Text>
+          <Text style={styles.sectionSubtitle}>What you write about most</Text>
+        </View>
         <ThemeCloud
           themes={themes}
           onBubblePress={handleBubblePress}
@@ -161,6 +189,12 @@ export default function AnalyticsScreen({ focused, onEditEntry }: Props) {
               <Text style={styles.sectionSubtitle}>Emotional mix by week</Text>
             </View>
             <ToneRiver chunks={chunkRows} />
+
+            <View style={styles.sectionHeading}>
+              <Text style={styles.sectionTitle}>Thought patterns</Text>
+              <Text style={styles.sectionSubtitle}>Cognitive distortions — tap to see which themes they appear with</Text>
+            </View>
+            <DistortionBreakdown chunks={chunkRows} />
           </>
         )}
       </ScrollView>
